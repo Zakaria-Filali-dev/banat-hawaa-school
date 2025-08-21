@@ -35,10 +35,10 @@ Click "Environment Variables" and add these **one by one**:
 
 - `SUPABASE_URL` = `https://ilqxgmdhtwumjjdyvmvt.supabase.co`
 - `SUPABASE_SERVICE_ROLE_KEY` = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlscXhnbWRodHd1bWpqZHl2bXZ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDY2MzE1OCwiZXhwIjoyMDY2MjM5MTU4fQ.GiqPUjsZtUijOOyLfmi-RI0sMQmAITdPBnSZapEECn8`
-- `SMTP_HOST` = `smtp.gmail.com`
-- `SMTP_PORT` = `465`
-- `SMTP_USER` = `zakifilali42@gmail.com`
-- `SMTP_PASS` = `mdfv xfmq hinf rcdh`
+- `SMTP_HOST` = `smtp-relay.brevo.com`
+- `SMTP_PORT` = `587`
+- `SMTP_USER` = `954ebc001@smtp-brevo.com`
+- `SMTP_PASS` = `85vZbYyXxnSOCaRq`
 - `SMTP_FROM` = `BANAT-HAWAA-SCHOOL <zakifilali42@gmail.com>`
 
 **Note**: The FRONTEND_URL will be automatically set by Vercel
