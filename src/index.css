@@ -1,0 +1,139 @@
+/* Global Reset and Performance Optimizations */
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  /* Hardware acceleration for Chrome performance */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Clean form styling */
+select,
+.dropdown,
+.dropdown-menu,
+.form-input,
+.form-select,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+textarea {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.5rem;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* Fix for desktop layout centering */
+#root {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+  /* Ensure proper centering on desktop without transform hacks */
+  /* Center using margin auto to avoid conflicts with global transforms */
+  background: transparent;
+}
+
+/* Ensure all main containers respect the centering */
+.app-container,
+.admin-dashboard,
+.teacher-dashboard,
+.student-dashboard {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  transform: translateZ(0);
+}
+
+/* Performance optimizations for all interactive elements */
+button, input, select, textarea {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  transition: all 0.15s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+  #root {
+    max-width: 100%;
+    padding: 0 20px;
+    /* No positional transforms needed */
+  }
+}
+
+@media (max-width: 768px) {
+  #root {
+    padding: 0 10px;
+  }
+}
+
+/* Chrome-specific optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+
+  /* Do NOT override transform for all elements globally.
+     This breaks positioning (e.g., centering) and can cause blank pages. */
+  * {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+    perspective: 1000px;
+  }
+}
+
+/* Global select styling for better visibility across all components */
+select {
+  background: rgba(30, 41, 59, 0.95) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(148, 163, 184, 0.3) !important;
+}
+
+select option {
+  background: rgba(30, 41, 59, 0.98) !important;
+  color: #e2e8f0 !important;
+  padding: 8px 12px !important;
+  border: none !important;
+}
+
+select option:hover,
+select option:focus,
+select option:checked {
+  background: rgba(147, 51, 234, 0.3) !important;
+  color: #C4B5FD !important;
+}
+
+/* Firefox-specific option styling */
+@-moz-document url-prefix() {
+  select option {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+  }
+
+  select option:checked {
+    background: rgba(147, 51, 234, 0.5) !important;
+    color: white !important;
+  }
+}

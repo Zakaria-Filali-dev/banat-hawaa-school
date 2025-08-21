@@ -1,0 +1,42 @@
+/* 📝 Student Registration Form Styles */
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem;
+    background: var(--card-bg, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.checkbox-label:hover {
+    background: var(--card-hover-bg, rgba(255, 255, 255, 0.15));
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 0.75rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    cursor: pointer;
+}
+
+.form-group h3 {
+    color: var(--text-primary, #333);
+    margin-bottom: 1rem;
+    margin-top: 1.5rem;
+    font-size: 1.25rem;
+}
+
+.form-group p {
+    color: var(--text-secondary, #666);
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+}
+
+.form-input[rows] {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}

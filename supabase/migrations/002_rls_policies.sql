@@ -1,0 +1,175 @@
+-- 🔐 Row Level Security Policies
+-- Run these after creating the tables
+
+-- Enable RLS on all tables
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subjects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pending_applications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE student_subjects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assignment_submissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- Helper function to get current user role
+CREATE OR REPLACE FUNCTION get_user_role(user_id UUID)
+RETURNS TEXT AS $$
+BEGIN
+    RETURN (SELECT role FROM profiles WHERE id = user_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Helper function to check if user is admin
+CREATE OR REPLACE FUNCTION is_admin(user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN (SELECT role = 'admin' FROM profiles WHERE id = user_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Helper function to check if user is teacher of subject
+CREATE OR REPLACE FUNCTION is_teacher_of_subject(user_id UUID, subject_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN (SELECT teacher_id = user_id FROM subjects WHERE id = subject_id);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Helper function to check if student is enrolled in subject
+CREATE OR REPLACE FUNCTION is_student_enrolled(student_id UUID, subject_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM student_subjects 
+        WHERE student_id = student_id AND subject_id = subject_id AND status = 'active'
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- PROFILES POLICIES
+CREATE POLICY "Users can view own profile" ON profiles
+    FOR SELECT USING (id = auth.uid());
+
+CREATE POLICY "Users can update own profile" ON profiles
+    FOR UPDATE USING (id = auth.uid());
+
+CREATE POLICY "Admins can view all profiles" ON profiles
+    FOR ALL USING (is_admin(auth.uid()));
+
+CREATE POLICY "Teachers can view student profiles in their subjects" ON profiles
+    FOR SELECT USING (
+        role = 'student' AND EXISTS (
+            SELECT 1 FROM student_subjects ss
+            JOIN subjects s ON ss.subject_id = s.id
+            WHERE ss.student_id = id AND s.teacher_id = auth.uid()
+        )
+    );
+
+-- SUBJECTS POLICIES
+CREATE POLICY "Everyone can view active subjects" ON subjects
+    FOR SELECT USING (status = 'active');
+
+CREATE POLICY "Admins can manage all subjects" ON subjects
+    FOR ALL USING (is_admin(auth.uid()));
+
+CREATE POLICY "Teachers can update their assigned subjects" ON subjects
+    FOR UPDATE USING (teacher_id = auth.uid());
+
+-- PENDING APPLICATIONS POLICIES
+CREATE POLICY "Only admins can view applications" ON pending_applications
+    FOR SELECT USING (is_admin(auth.uid()));
+
+CREATE POLICY "Only admins can manage applications" ON pending_applications
+    FOR ALL USING (is_admin(auth.uid()));
+
+-- STUDENT SUBJECTS POLICIES
+CREATE POLICY "Students can view their enrollments" ON student_subjects
+    FOR SELECT USING (student_id = auth.uid());
+
+CREATE POLICY "Admins can manage all enrollments" ON student_subjects
+    FOR ALL USING (is_admin(auth.uid()));
+
+CREATE POLICY "Teachers can view enrollments in their subjects" ON student_subjects
+    FOR SELECT USING (is_teacher_of_subject(auth.uid(), subject_id));
+
+-- ANNOUNCEMENTS POLICIES
+CREATE POLICY "Users see announcements based on audience" ON announcements
+    FOR SELECT USING (
+        is_published = true AND (
+            target_audience = 'all' OR
+            (target_audience = get_user_role(auth.uid())) OR
+            (target_audience = 'subject_students' AND subject_id IS NOT NULL AND 
+             is_student_enrolled(auth.uid(), subject_id))
+        )
+    );
+
+CREATE POLICY "Admins can create school-wide announcements" ON announcements
+    FOR INSERT WITH CHECK (is_admin(auth.uid()));
+
+CREATE POLICY "Teachers can create subject announcements" ON announcements
+    FOR INSERT WITH CHECK (
+        get_user_role(auth.uid()) = 'teacher' AND
+        (subject_id IS NULL OR is_teacher_of_subject(auth.uid(), subject_id))
+    );
+
+CREATE POLICY "Authors can update their announcements" ON announcements
+    FOR UPDATE USING (author_id = auth.uid());
+
+-- DOCUMENTS POLICIES
+CREATE POLICY "Students can view public documents in their subjects" ON documents
+    FOR SELECT USING (
+        is_public = true AND 
+        (subject_id IS NULL OR is_student_enrolled(auth.uid(), subject_id))
+    );
+
+CREATE POLICY "Teachers can manage documents in their subjects" ON documents
+    FOR ALL USING (
+        subject_id IS NULL AND get_user_role(auth.uid()) = 'teacher' OR
+        is_teacher_of_subject(auth.uid(), subject_id)
+    );
+
+CREATE POLICY "Admins can manage all documents" ON documents
+    FOR ALL USING (is_admin(auth.uid()));
+
+-- ASSIGNMENTS POLICIES
+CREATE POLICY "Students can view assignments in their subjects" ON assignments
+    FOR SELECT USING (
+        is_published = true AND is_student_enrolled(auth.uid(), subject_id)
+    );
+
+CREATE POLICY "Teachers can manage assignments in their subjects" ON assignments
+    FOR ALL USING (is_teacher_of_subject(auth.uid(), subject_id));
+
+CREATE POLICY "Admins can view all assignments" ON assignments
+    FOR SELECT USING (is_admin(auth.uid()));
+
+-- ASSIGNMENT SUBMISSIONS POLICIES
+CREATE POLICY "Students can view/create their own submissions" ON assignment_submissions
+    FOR ALL USING (student_id = auth.uid());
+
+CREATE POLICY "Teachers can view submissions for their assignments" ON assignment_submissions
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM assignments a
+            WHERE a.id = assignment_id AND is_teacher_of_subject(auth.uid(), a.subject_id)
+        )
+    );
+
+CREATE POLICY "Teachers can grade submissions for their assignments" ON assignment_submissions
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM assignments a
+            WHERE a.id = assignment_id AND is_teacher_of_subject(auth.uid(), a.subject_id)
+        )
+    );
+
+-- NOTIFICATIONS POLICIES
+CREATE POLICY "Users can view their notifications" ON notifications
+    FOR SELECT USING (recipient_id = auth.uid());
+
+CREATE POLICY "Users can update their notifications" ON notifications
+    FOR UPDATE USING (recipient_id = auth.uid());
+
+CREATE POLICY "System can create notifications" ON notifications
+    FOR INSERT WITH CHECK (true); -- Will be handled by backend with service role
