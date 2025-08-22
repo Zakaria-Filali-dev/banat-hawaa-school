@@ -79,6 +79,7 @@ export default function AuthCallback() {
         }
 
         if (data?.user) {
+          console.log("Invite verified, redirecting to set-password page");
           navigate("/auth/set-password");
           return;
         }
