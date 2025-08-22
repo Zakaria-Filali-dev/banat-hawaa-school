@@ -33,8 +33,14 @@ export default function AuthCallback() {
           return;
         }
 
-        // If this is not an invitation link, redirect to login
+        // If this is not an invitation link, check if user is already authenticated
         if (type !== "invite") {
+          // Check session: if user is already authenticated, redirect to set-password
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.user) {
+            navigate("/auth/set-password");
+            return;
+          }
           navigate("/login");
           return;
         }
@@ -50,6 +56,7 @@ export default function AuthCallback() {
 
         // Try different approaches for invite verification
         let verificationResult;
+        let verified = false;
 
         try {
           // First try: Use token as token_hash (most common for invites)
@@ -57,6 +64,7 @@ export default function AuthCallback() {
             token_hash: verificationToken,
             type: "invite",
           });
+          verified = true;
         } catch {
           // Second try: Use token directly
           try {
@@ -64,6 +72,7 @@ export default function AuthCallback() {
               token: verificationToken,
               type: "invite",
             });
+            verified = true;
           } catch {
             // Third try: Check if session is already established
             verificationResult = await supabase.auth.getSession();
@@ -72,7 +81,13 @@ export default function AuthCallback() {
 
         const { data, error } = verificationResult;
 
-        if (error) {
+        // If invite verification failed, but user is already authenticated, redirect to set-password
+        if (error && !verified) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.user) {
+            navigate("/auth/set-password");
+            return;
+          }
           setError(`Invitation verification failed: ${error.message}`);
           setLoading(false);
           return;

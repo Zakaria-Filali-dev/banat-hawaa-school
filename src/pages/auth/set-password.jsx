@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../services/supabaseClient";
 
@@ -7,7 +7,20 @@ export default function SetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const navigate = useNavigate();
+
+  // Check session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.user) {
+        navigate("/login");
+      }
+      setCheckingSession(false);
+    };
+    checkSession();
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,6 +40,16 @@ export default function SetPassword() {
     }
     setLoading(false);
   };
+
+  if (checkingSession) {
+    return (
+      <div className="page-wrapper">
+        <div className="container">
+          <h2>Checking session...</h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-wrapper">
