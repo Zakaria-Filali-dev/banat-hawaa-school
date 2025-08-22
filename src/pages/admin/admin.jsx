@@ -661,8 +661,9 @@ const Admin = () => {
       fetchTeachers();
       fetchSubjects(); // Refresh subjects to show new assignments
       fetchStats();
+
       setModalState({
-        message: `Teacher account created successfully!${
+        message: `Teacher account created successfully and invitation email sent!${
           newTeacher.assignedSubjects.length > 0
             ? ` ${newTeacher.assignedSubjects.length} subject(s) assigned.`
             : ""

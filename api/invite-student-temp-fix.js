@@ -52,21 +52,24 @@ export default async function handler(req, res) {
             throw new Error("Email and full name are required");
         }
 
-        // Create user and send invitation email
-        console.log('Calling supabase.auth.admin.inviteUserByEmail...');
-        console.log('Email being sent to:', email);
-        console.log('Redirect URL:', `https://banat-hawaa-school.vercel.app/login`);
+        // TEMPORARY FIX: Create user without email invitation
+        // This bypasses the email sending issue while we configure Supabase SMTP
+        console.log('Creating user without email invitation (temporary fix)...');
         
-        const { data: userData, error: authError } = await supabase.auth.admin.inviteUserByEmail(email, {
-            data: {
+        // Generate a temporary password
+        const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
+        
+        const { data: userData, error: authError } = await supabase.auth.admin.createUser({
+            email,
+            password: tempPassword,
+            email_confirm: true, // Skip email confirmation
+            user_metadata: {
                 full_name,
                 role,
-            },
-            redirectTo: `https://banat-hawaa-school.vercel.app/login`
+            }
         });
 
-        console.log('Supabase invite response - data:', userData);
-        console.log('Supabase invite response - error:', authError);        if (authError) {
+        if (authError) {
             console.error('Supabase auth error:', authError);
             throw new Error(`Authentication failed: ${authError.message || JSON.stringify(authError)}`);
         }
@@ -130,7 +133,8 @@ export default async function handler(req, res) {
         return res.status(200).json({
             success: true,
             user: userData.user,
-            message: `${role} account created successfully and invitation email sent!`
+            temporaryPassword: tempPassword, // Include temp password in response
+            message: `${role} account created successfully! Temporary password: ${tempPassword} (Email system will be configured later)`
         });
 
     } catch (err) {
