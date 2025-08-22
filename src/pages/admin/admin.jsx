@@ -8,32 +8,10 @@ import AnnouncementEditModal from "../../components/AnnouncementEditModal";
 import MultipleTeacherAssignModal from "../../components/MultipleTeacherAssignModal";
 import "./admin.css";
 
-// Dynamic API base URL configuration
+// API base URL for production deployment
 const getApiBaseUrl = () => {
-  const currentPort = window.location.port;
-  console.log("Current port:", currentPort);
-
-  // Map frontend ports to backend ports
-  const portMap = {
-    5173: "3000", // Default Vite dev port
-    5174: "3000", // Alternative Vite port
-    5175: "3000", // Another alternative port
-    4173: "3000", // Vite preview port
-    3000: "3000", // Direct backend port
-  };
-
-  const backendPort = portMap[currentPort] || "3000";
-
-  // For development (localhost), use the mapped backend port
-  if (
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1"
-  ) {
-    return `http://localhost:${backendPort}`;
-  }
-
-  // For production, use the same protocol and hostname with backend port
-  return `${window.location.protocol}//${window.location.hostname}:${backendPort}`;
+  // For production on Vercel, use serverless functions
+  return `${window.location.origin}/api`;
 };
 
 const Admin = () => {

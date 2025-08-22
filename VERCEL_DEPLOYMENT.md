@@ -28,20 +28,19 @@ Click "Environment Variables" and add these **one by one**:
 
 **Public Variables (available in browser):**
 
-- `VITE_SUPABASE_URL` = `https://ilqxgmdhtwumjjdyvmvt.supabase.co`
-- `VITE_SUPABASE_ANON_KEY` = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlscXhnbWRodHd1bWpqZHl2bXZ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2NjMxNTgsImV4cCI6MjA2NjIzOTE1OH0.MIi6s5h-JEJ70vgszDljvQXS9sENWFF337D1tpXizrw`
+- `VITE_SUPABASE_URL` = `your_supabase_url_here`
+- `VITE_SUPABASE_ANON_KEY` = `your_supabase_anon_key_here`
 
 **Private Variables (server-side only):**
 
-- `SUPABASE_URL` = `https://ilqxgmdhtwumjjdyvmvt.supabase.co`
-- `SUPABASE_SERVICE_ROLE_KEY` = `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlscXhnbWRodHd1bWpqZHl2bXZ0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDY2MzE1OCwiZXhwIjoyMDY2MjM5MTU4fQ.GiqPUjsZtUijOOyLfmi-RI0sMQmAITdPBnSZapEECn8`
+- `SUPABASE_URL` = `your_supabase_url_here`
+- `SUPABASE_SERVICE_ROLE_KEY` = `your_supabase_service_role_key_here`
 - `SMTP_HOST` = `smtp-relay.brevo.com`
 - `SMTP_PORT` = `587`
-- `SMTP_USER` = `954ebc001@smtp-brevo.com`
-- `SMTP_PASS` = `85vZbYyXxnSOCaRq`
-- `SMTP_FROM` = `BANAT-HAWAA-SCHOOL <zakifilali42@gmail.com>`
-
-**Note**: The FRONTEND_URL will be automatically set by Vercel
+- `SMTP_USER` = `your_brevo_username_here`
+- `SMTP_PASS` = `your_brevo_password_here`
+- `SMTP_FROM` = `YOUR-SCHOOL-NAME <your_email@domain.com>`
+- `FRONTEND_URL` = `https://your-app-name.vercel.app`
 
 ### 5. Deploy
 
