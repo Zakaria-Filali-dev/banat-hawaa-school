@@ -20,7 +20,19 @@ The error "Authentication failed: Error sending invite email" occurs because **S
    **ALSO IMPORTANT**: Check `Authentication` → `URL Configuration`:
 
    - **Site URL**: `https://banat-hawaa-school.vercel.app`
-   - **Redirect URLs**: Add `https://banat-hawaa-school.vercel.app/auth/callback`
+   - **Redirect URLs**: Add ALL of these URLs (one per line):
+     ```
+     https://banat-hawaa-school.vercel.app/auth/callback
+     https://banat-hawaa-school.vercel.app/login
+     https://banat-hawaa-school.vercel.app/register
+     https://banat-hawaa-school.vercel.app
+     ```
+     
+   **Why each URL is needed:**
+   - `/auth/callback` - For email invitations and confirmations
+   - `/login` - For regular login redirects  
+   - `/register` - For registration confirmations
+   - Root domain - For general authentication flows
 
 3. **Configure Brevo SMTP Settings**
 
