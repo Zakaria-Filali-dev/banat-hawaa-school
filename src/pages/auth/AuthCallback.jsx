@@ -78,8 +78,10 @@ export default function AuthCallback() {
           return;
         }
 
-        if (data?.user) {
-          console.log("Invite verified, redirecting to set-password page");
+        if (data?.user || data?.session || data) {
+          console.log(
+            "Invite verified or session present, redirecting to set-password page"
+          );
           navigate("/auth/set-password");
           return;
         }
