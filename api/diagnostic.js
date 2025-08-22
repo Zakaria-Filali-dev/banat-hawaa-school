@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         );
 
         console.log('=== DIAGNOSTIC TEST ===');
-        
+
         // Test environment variables
         const envCheck = {
             SUPABASE_URL: !!process.env.SUPABASE_URL,
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
         // Test creating a simple user without email invitation first
         console.log('Testing basic user creation without email...');
         const testEmail = `test-${Date.now()}@example.com`;
-        
+
         let authTestResult = null;
         try {
             // Try basic auth admin create (no email)
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
                 authTestResult = { success: false, error: authError.message };
             } else {
                 authTestResult = { success: true, userId: authData?.user?.id };
-                
+
                 // Clean up test user
                 await supabase.auth.admin.deleteUser(authData.user.id);
             }

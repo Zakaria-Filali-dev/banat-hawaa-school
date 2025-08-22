@@ -55,18 +55,16 @@ export default async function handler(req, res) {
         // Create user and send invitation email
         console.log('Calling supabase.auth.admin.inviteUserByEmail...');
         console.log('Email being sent to:', email);
-        console.log('Redirect URL:', `https://banat-hawaa-school.vercel.app/login`);
-        
+        console.log('Redirect URL:', `https://banat-hawaa-school.vercel.app/auth/callback`);
+
         const { data: userData, error: authError } = await supabase.auth.admin.inviteUserByEmail(email, {
             data: {
                 full_name,
                 role,
             },
-            redirectTo: `https://banat-hawaa-school.vercel.app/login`
-        });
-
-        console.log('Supabase invite response - data:', userData);
-        console.log('Supabase invite response - error:', authError);        if (authError) {
+            redirectTo: `https://banat-hawaa-school.vercel.app/auth/callback`
+        }); console.log('Supabase invite response - data:', userData);
+        console.log('Supabase invite response - error:', authError); if (authError) {
             console.error('Supabase auth error:', authError);
             throw new Error(`Authentication failed: ${authError.message || JSON.stringify(authError)}`);
         }

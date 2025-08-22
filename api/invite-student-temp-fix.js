@@ -55,10 +55,10 @@ export default async function handler(req, res) {
         // TEMPORARY FIX: Create user without email invitation
         // This bypasses the email sending issue while we configure Supabase SMTP
         console.log('Creating user without email invitation (temporary fix)...');
-        
+
         // Generate a temporary password
         const tempPassword = `Temp${Math.random().toString(36).slice(-8)}!`;
-        
+
         const { data: userData, error: authError } = await supabase.auth.admin.createUser({
             email,
             password: tempPassword,

@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>API URL Test</title>
 </head>
+
 <body>
     <h1>API URL Construction Test</h1>
     <div id="results"></div>
-    
+
     <script>
         // Simulate the getApiBaseUrl function from your app
         function getApiBaseUrl() {
@@ -15,11 +17,11 @@
             }
             return `${window.location.origin}/api`;
         }
-        
+
         const baseUrl = getApiBaseUrl();
         const inviteUrl = `${baseUrl}/invite-student`;
         const testUrl = `${baseUrl}/test`;
-        
+
         document.getElementById('results').innerHTML = `
             <h2>URL Construction Results:</h2>
             <p><strong>Base URL:</strong> ${baseUrl}</p>
@@ -32,7 +34,7 @@
             <button onclick="testEndpoint('${testUrl}')">Test /test endpoint</button>
             <div id="test-results"></div>
         `;
-        
+
         async function testEndpoint(url) {
             const resultsDiv = document.getElementById('test-results');
             try {
@@ -55,4 +57,5 @@
         }
     </script>
 </body>
+
 </html>
