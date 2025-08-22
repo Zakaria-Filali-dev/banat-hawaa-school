@@ -498,7 +498,7 @@ const Admin = () => {
       if (updateError) throw updateError;
 
       // Create student account via API
-      const response = await fetch(`${getApiBaseUrl()}/api/invite-student`, {
+      const response = await fetch(`${getApiBaseUrl()}/invite-student`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -615,7 +615,7 @@ const Admin = () => {
     e.preventDefault();
     try {
       // First create the teacher account via API
-      const response = await fetch(`${getApiBaseUrl()}/api/invite-student`, {
+      const response = await fetch(`${getApiBaseUrl()}/invite-student`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
