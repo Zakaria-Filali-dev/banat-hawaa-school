@@ -79,7 +79,7 @@ export default function AuthCallback() {
         }
 
         if (data?.user) {
-          navigate("/auth/confirm");
+          navigate("/auth/set-password");
           return;
         }
 

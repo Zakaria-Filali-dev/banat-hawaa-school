@@ -27,10 +27,11 @@ The error "Authentication failed: Error sending invite email" occurs because **S
      https://banat-hawaa-school.vercel.app/register
      https://banat-hawaa-school.vercel.app
      ```
-     
+
    **Why each URL is needed:**
+
    - `/auth/callback` - For email invitations and confirmations
-   - `/login` - For regular login redirects  
+   - `/login` - For regular login redirects
    - `/register` - For registration confirmations
    - Root domain - For general authentication flows
 
