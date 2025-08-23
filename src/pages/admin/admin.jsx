@@ -279,7 +279,8 @@ const Admin = () => {
           subject:subjects(name)
         `
         )
-        .order("session_date", { ascending: false });
+        .order("session_date", { ascending: false })
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setSessions(data || []);
@@ -765,7 +766,7 @@ const Admin = () => {
       // Create notification for teacher
       const session = pendingSessions.find((s) => s.id === sessionId);
       if (session) {
-  // Notification system removed. No notification insert needed.
+        // Notification system removed. No notification insert needed.
       }
 
       await fetchPendingSessions();
@@ -800,7 +801,7 @@ const Admin = () => {
       // Create notification for teacher
       const session = pendingSessions.find((s) => s.id === sessionId);
       if (session) {
-  // Notification system removed. No notification insert needed.
+        // Notification system removed. No notification insert needed.
       }
 
       await fetchPendingSessions();
@@ -1097,7 +1098,7 @@ This action CANNOT be undone. Are you absolutely sure?`;
         .eq("student_id", studentId);
 
       // 4. Delete notifications
-  // Notification system removed. No notification delete needed.
+      // Notification system removed. No notification delete needed.
 
       // 5. Delete class attendance records
       await supabase
@@ -1188,7 +1189,7 @@ Type "DELETE" to confirm permanent deletion:`;
         .eq("teacher_id", teacherId);
 
       // 6. Delete notifications
-  // Notification system removed. No notification delete needed for teacher.
+      // Notification system removed. No notification delete needed for teacher.
 
       // 7. Delete admin messages
       await supabase

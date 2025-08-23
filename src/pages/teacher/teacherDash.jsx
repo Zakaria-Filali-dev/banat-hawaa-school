@@ -204,7 +204,8 @@ export default function Teachers() {
         `
           )
           .eq("teacher_id", userId)
-          .order("session_date", { ascending: false });
+          .order("session_date", { ascending: false })
+          .order("created_at", { ascending: false });
 
         // Fetch recent notifications (new submissions)
         const { data: notificationsData } = await supabase
