@@ -765,14 +765,7 @@ const Admin = () => {
       // Create notification for teacher
       const session = pendingSessions.find((s) => s.id === sessionId);
       if (session) {
-        await supabase.from("notifications").insert({
-          user_id: session.teacher_id,
-          title: "Session Approved",
-          message: `Your session "${session.title}" has been approved by admin.`,
-          type: "session_approved",
-          related_id: sessionId,
-          is_read: false,
-        });
+  // Notification system removed. No notification insert needed.
       }
 
       await fetchPendingSessions();
@@ -807,14 +800,7 @@ const Admin = () => {
       // Create notification for teacher
       const session = pendingSessions.find((s) => s.id === sessionId);
       if (session) {
-        await supabase.from("notifications").insert({
-          user_id: session.teacher_id,
-          title: "Session Rejected",
-          message: `Your session "${session.title}" has been rejected. Reason: ${reason}`,
-          type: "session_rejected",
-          related_id: sessionId,
-          is_read: false,
-        });
+  // Notification system removed. No notification insert needed.
       }
 
       await fetchPendingSessions();
@@ -1111,10 +1097,7 @@ This action CANNOT be undone. Are you absolutely sure?`;
         .eq("student_id", studentId);
 
       // 4. Delete notifications
-      await supabase
-        .from("notifications")
-        .delete()
-        .eq("recipient_id", studentId);
+  // Notification system removed. No notification delete needed.
 
       // 5. Delete class attendance records
       await supabase
@@ -1205,10 +1188,7 @@ Type "DELETE" to confirm permanent deletion:`;
         .eq("teacher_id", teacherId);
 
       // 6. Delete notifications
-      await supabase
-        .from("notifications")
-        .delete()
-        .or(`sender_id.eq.${teacherId},user_id.eq.${teacherId}`);
+  // Notification system removed. No notification delete needed for teacher.
 
       // 7. Delete admin messages
       await supabase

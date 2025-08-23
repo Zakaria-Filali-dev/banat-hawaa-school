@@ -378,6 +378,19 @@ export default function Teachers() {
         !newSession.end_time
       ) {
         setError("Please fill in all required fields");
+        setErrorDetails("");
+        return;
+      }
+
+      // Validate subject_id is in teacherSubjects
+      const validSubject = teacherSubjects.some(
+        (subj) => subj.id === newSession.subject_id
+      );
+      if (!validSubject) {
+        setError(
+          "Invalid subject selected. Please choose one of your subjects."
+        );
+        setErrorDetails("");
         return;
       }
 
@@ -393,11 +406,17 @@ export default function Teachers() {
         ])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        setError("Failed to create session");
+        setErrorDetails(error?.message || JSON.stringify(error));
+        return;
+      }
 
       setSuccessMessage(
         "Session created successfully! Waiting for admin approval."
       );
+      setError("");
+      setErrorDetails("");
       setShowSessionForm(false);
 
       // Smooth scroll back to schedule section after form closes
@@ -465,13 +484,7 @@ export default function Teachers() {
       // Create notification for student
       const submission = submissions.find((s) => s.id === submissionId);
       if (submission) {
-        await supabase.from("notifications").insert({
-          recipient_id: submission.student_id,
-          title: "Assignment Graded",
-          message: `Your assignment "${submission.assignments.title}" has been graded. Score: ${score}`,
-          type: "grade",
-          related_id: submissionId,
-        });
+        // Notification system removed. No notification insert needed for grading.
       }
 
       await fetchTeacherData(user.id);
