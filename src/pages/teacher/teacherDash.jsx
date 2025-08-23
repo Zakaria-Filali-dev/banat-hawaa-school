@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import MessageModal from "../../components/MessageModal";
 import { supabase } from "../../services/supabaseClient";
 import AssignmentCreator from "../../components/assignments/AssignmentCreator";
 import SubmissionFilesViewer from "../../components/SubmissionFilesViewer";
@@ -9,6 +10,7 @@ import "./teacherDash.css";
 export default function Teachers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [errorDetails, setErrorDetails] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [activeTab, setActiveTab] = useState("assignments");
@@ -426,6 +428,7 @@ export default function Teachers() {
     } catch (error) {
       console.error("Error creating session:", error);
       setError("Failed to create session");
+      setErrorDetails(error?.message || JSON.stringify(error));
     }
   };
 
@@ -628,7 +631,23 @@ export default function Teachers() {
 
   if (loading)
     return <div className="loading">Loading teacher dashboard...</div>;
-  if (error) return <div className="message message-error">{error}</div>;
+
+  // Error popup modal
+  const handleCloseErrorModal = () => {
+    setError("");
+    setErrorDetails("");
+  };
+
+  // Show error modal if error exists
+  if (error) {
+    return (
+      <MessageModal
+        message={error + (errorDetails ? `\nDetails: ${errorDetails}` : "")}
+        type="error"
+        onClose={handleCloseErrorModal}
+      />
+    );
+  }
 
   return (
     <div className="teacher-dashboard">
