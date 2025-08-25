@@ -8,6 +8,7 @@ import Teachers from "./pages/teacher/teacherDash.jsx";
 import Confirm from "./pages/auth/Confirm.jsx";
 import AuthCallback from "./pages/auth/AuthCallback.jsx";
 import SetPassword from "./pages/auth/set-password.jsx";
+import SetupPassword from "./pages/setup-password.jsx";
 import { useEffect, useState } from "react";
 import { supabase } from "./services/supabaseClient";
 
@@ -94,6 +95,7 @@ function App() {
         <Route path="/auth/confirm" element={<Confirm />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/auth/set-password" element={<SetPassword />} />
+        <Route path="/setup-password" element={<SetupPassword />} />
         <Route path="/" element={<Landing />} />
         {/* 404 fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
