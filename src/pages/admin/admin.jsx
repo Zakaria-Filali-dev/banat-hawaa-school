@@ -2163,19 +2163,6 @@ Type "DELETE" to confirm permanent deletion:`;
                         <strong>Address:</strong> {app.address}
                       </p>
 
-                      <div className="parent-info">
-                        <h4>Parent/Guardian Information</h4>
-                        <p>
-                          <strong>Name:</strong> {app.parent_name}
-                        </p>
-                        <p>
-                          <strong>Email:</strong> {app.parent_email}
-                        </p>
-                        <p>
-                          <strong>Phone:</strong> {app.parent_phone}
-                        </p>
-                      </div>
-
                       <div className="subjects-requested">
                         <h4>Subjects Requested</h4>
                         <div className="subjects-list">
