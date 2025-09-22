@@ -19,7 +19,7 @@ export default function SetupPassword() {
     setLoading(true);
     setError("");
     setSuccess("");
-    
+
     if (!password || !confirmPassword) {
       setError("Please enter and confirm your password.");
       setLoading(false);
@@ -40,7 +40,7 @@ export default function SetupPassword() {
       setLoading(false);
       return;
     }
-    
+
     try {
       // Call backend API to verify token and set password
       const response = await fetch("/api/setup-password", {
@@ -49,13 +49,13 @@ export default function SetupPassword() {
         body: JSON.stringify({ token, password }),
       });
       const result = await response.json();
-      
+
       if (!response.ok) {
         setError(result.error || "Failed to set password.");
         setLoading(false);
         return;
       }
-      
+
       setSuccess("Password set successfully! Redirecting to sign in page...");
       setTimeout(() => {
         navigate("/login");
@@ -89,12 +89,25 @@ export default function SetupPassword() {
             minLength={6}
             style={{ width: "100%", padding: "0.5rem", marginBottom: "1rem" }}
           />
-          <button type="submit" className="btn btn-primary" style={{ width: "100%" }} disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{ width: "100%" }}
+            disabled={loading}
+          >
             {loading ? "Setting Password..." : "Set Password"}
           </button>
         </form>
-        {error && <p style={{ color: "red", marginTop: "1rem", textAlign: "center" }}>{error}</p>}
-        {success && <p style={{ color: "green", marginTop: "1rem", textAlign: "center" }}>{success}</p>}
+        {error && (
+          <p style={{ color: "red", marginTop: "1rem", textAlign: "center" }}>
+            {error}
+          </p>
+        )}
+        {success && (
+          <p style={{ color: "green", marginTop: "1rem", textAlign: "center" }}>
+            {success}
+          </p>
+        )}
       </div>
     </div>
   );

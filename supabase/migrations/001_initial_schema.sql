@@ -127,10 +127,12 @@ CREATE TABLE IF NOT EXISTS assignment_submissions (
 -- 10. Create notifications table
 CREATE TABLE IF NOT EXISTS notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    recipient_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    recipient_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     message TEXT NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('announcement', 'assignment', 'grade', 'system', 'reminder')),
+    type TEXT NOT NULL CHECK (type IN ('announcement', 'assignment', 'grade', 'system', 'reminder', 'session_approved', 'session_rejected', 'session_update')),
+    priority TEXT DEFAULT 'normal',
     related_id UUID,
     is_read BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -49,23 +49,23 @@ export default async function handler(req, res) {
 
         if (deleteError) {
             console.error('Error deleting message:', deleteError);
-            return res.status(500).json({ 
-                error: 'Failed to delete message: ' + deleteError.message 
+            return res.status(500).json({
+                error: 'Failed to delete message: ' + deleteError.message
             });
         }
 
         console.log('Message deleted successfully:', existingMessage.subject);
 
-        return res.status(200).json({ 
-            success: true, 
+        return res.status(200).json({
+            success: true,
             message: 'Message deleted successfully',
-            deletedMessage: existingMessage 
+            deletedMessage: existingMessage
         });
 
     } catch (err) {
         console.error('Unexpected error during message deletion:', err);
-        return res.status(500).json({ 
-            error: 'Internal server error while deleting message' 
+        return res.status(500).json({
+            error: 'Internal server error while deleting message'
         });
     }
 }

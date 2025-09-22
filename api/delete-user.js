@@ -78,7 +78,7 @@ export default async function handler(req, res) {
                         .from("assignment-files")
                         .remove([`${assignment.id}/`]);
                 }
-                
+
                 await supabase
                     .from("assignment_submissions")
                     .delete()
@@ -95,7 +95,7 @@ export default async function handler(req, res) {
             .from("admin_messages")
             .delete()
             .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`);
-        
+
         await supabase.from("user_suspensions").delete().eq("user_id", user.id);
 
         // Delete profile

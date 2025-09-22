@@ -1049,6 +1049,7 @@ const Admin = () => {
 • Grades and progress
 • File uploads
 • All records
+• Account from Supabase Auth
 
 This action CANNOT be undone. Are you absolutely sure?`;
 
@@ -1069,117 +1070,34 @@ This action CANNOT be undone. Are you absolutely sure?`;
     }
 
     try {
-      console.log('Starting complete deletion for student:', studentId, studentName);
-      
-      // Get student email for additional cleanup
-      const { data: studentProfile } = await supabase
-        .from("profiles")
-        .select("email")
-        .eq("id", studentId)
-        .single();
-      
-      const studentEmail = studentProfile?.email;
-      console.log('Student email:', studentEmail);
+      console.log("Starting complete deletion for student:", studentId, studentName);
 
-      // Delete in order to handle foreign key constraints
-      // 1. Delete submission files first
-      const { data: submissions } = await supabase
-        .from("assignment_submissions")
-        .select("id")
-        .eq("student_id", studentId);
+      // Call the backend API for secure deletion
+      const response = await fetch('/api/admin-delete-user', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: studentId,
+          userType: 'student',
+          userName: studentName
+        })
+      });
 
-      if (submissions) {
-        for (const submission of submissions) {
-          await supabase
-            .from("submission_files")
-            .delete()
-            .eq("submission_id", submission.id);
-        }
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete student');
       }
 
-      // 2. Delete assignment submissions
-      await supabase
-        .from("assignment_submissions")
-        .delete()
-        .eq("student_id", studentId);
-
-      // 3. Delete student subject enrollments
-      await supabase
-        .from("student_subjects")
-        .delete()
-        .eq("student_id", studentId);
-
-      // 4. Delete notifications (using both ID and email if needed)
-      await supabase
-        .from("notifications")
-        .delete()
-        .eq("user_id", studentId);
-      
-      if (studentEmail) {
-        await supabase
-          .from("notifications")
-          .delete()
-          .eq("recipient_email", studentEmail);
-      }
-
-      // 5. Delete class attendance records
-      await supabase
-        .from("class_attendance")
-        .delete()
-        .eq("student_id", studentId);
-
-      // 6. Delete any announcements related to student (if any)
-      await supabase
-        .from("announcements")
-        .delete()
-        .eq("author_id", studentId);
-
-      // 7. Delete pending applications (in case any exist)
-      if (studentEmail) {
-        await supabase
-          .from("pending_applications")
-          .delete()
-          .eq("email", studentEmail);
-      }
-
-      // 8. Delete admin messages
-      await supabase
-        .from("admin_messages")
-        .delete()
-        .or(`sender_id.eq.${studentId},recipient_id.eq.${studentId}`);
-
-      // 9. Delete suspension records
-      await supabase
-        .from("user_suspensions")
-        .delete()
-        .eq("user_id", studentId);
-
-      // 10. Delete from Supabase Auth (this is CRITICAL!)
-      console.log('Deleting from Supabase Auth...');
-      const { error: authError } = await supabase.auth.admin.deleteUser(studentId);
-      if (authError) {
-        console.error('Auth deletion error:', authError);
-        // Continue anyway - we'll handle profile deletion
-      } else {
-        console.log('Successfully deleted from Supabase Auth');
-      }
-
-      // 11. Finally delete the profile
-      console.log('Deleting profile...');
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", studentId);
-
-      if (error) throw error;
-      
-      console.log('Student deletion completed successfully');
-
+      console.log("Student deletion completed successfully");
       fetchStudents();
       setModalState({
-        message: `${studentName} and all associated data have been permanently deleted.`,
+        message: result.message || `${studentName} and all associated data have been permanently deleted.`,
         type: "success",
       });
+
     } catch (error) {
       console.error("Error deleting student:", error);
       setModalState({
@@ -1197,6 +1115,7 @@ This action CANNOT be undone. Are you absolutely sure?`;
 • All subject assignments
 • All notifications and messages
 • Complete account and profile
+• Account from Supabase Auth
 
 ⚠️ THIS ACTION CANNOT BE UNDONE! ⚠️
 
@@ -1213,119 +1132,34 @@ Type "DELETE" to confirm permanent deletion:`;
     if (!finalConfirm) return;
 
     try {
-      console.log('Starting complete deletion for teacher:', teacherId, teacherName);
-      
-      // Get teacher email for additional cleanup
-      const { data: teacherProfile } = await supabase
-        .from("profiles")
-        .select("email")
-        .eq("id", teacherId)
-        .single();
-      
-      const teacherEmail = teacherProfile?.email;
-      console.log('Teacher email:', teacherEmail);
+      console.log("Starting complete deletion for teacher:", teacherId, teacherName);
 
-      // Delete in order to handle foreign key constraints
-      // 1. Delete assignment files first
-      const { data: teacherAssignments } = await supabase
-        .from("assignments")
-        .select("id")
-        .eq("teacher_id", teacherId);
+      // Call the backend API for secure deletion
+      const response = await fetch('/api/admin-delete-user', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: teacherId,
+          userType: 'teacher',
+          userName: teacherName
+        })
+      });
 
-      if (teacherAssignments) {
-        for (const assignment of teacherAssignments) {
-          await supabase.storage
-            .from("assignment-files")
-            .remove([`${assignment.id}/`]);
-        }
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete teacher');
       }
 
-      // 2. Delete assignment submissions
-      await supabase
-        .from("assignment_submissions")
-        .delete()
-        .in("assignment_id", teacherAssignments?.map((a) => a.id) || []);
-
-      // 3. Delete assignments
-      await supabase.from("assignments").delete().eq("teacher_id", teacherId);
-
-      // 4. Delete class sessions
-      await supabase
-        .from("class_sessions")
-        .delete()
-        .eq("teacher_id", teacherId);
-
-      // 5. Delete teacher subject assignments
-      await supabase
-        .from("teacher_subjects")
-        .delete()
-        .eq("teacher_id", teacherId);
-
-      // 6. Delete notifications
-      // Notification system removed. No notification delete needed for teacher.
-
-      // 7. Delete admin messages
-      await supabase
-        .from("admin_messages")
-        .delete()
-        .or(`sender_id.eq.${teacherId},recipient_id.eq.${teacherId}`);
-
-      // 8. Delete suspension records
-      await supabase.from("user_suspensions").delete().eq("user_id", teacherId);
-
-      // 9. Delete notifications (using both ID and email if needed)
-      await supabase
-        .from("notifications")
-        .delete()
-        .eq("user_id", teacherId);
-      
-      if (teacherEmail) {
-        await supabase
-          .from("notifications")
-          .delete()
-          .eq("recipient_email", teacherEmail);
-      }
-
-      // 10. Delete any announcements created by teacher
-      await supabase
-        .from("announcements")
-        .delete()
-        .eq("author_id", teacherId);
-
-      // 11. Delete pending applications (in case any exist)
-      if (teacherEmail) {
-        await supabase
-          .from("pending_applications")
-          .delete()
-          .eq("email", teacherEmail);
-      }
-
-      // 12. Delete from Supabase Auth (this is CRITICAL!)
-      console.log('Deleting from Supabase Auth...');
-      const { error: authError } = await supabase.auth.admin.deleteUser(teacherId);
-      if (authError) {
-        console.error('Auth deletion error:', authError);
-        // Continue anyway - we'll handle profile deletion
-      } else {
-        console.log('Successfully deleted from Supabase Auth');
-      }
-
-      // 13. Finally delete the profile
-      console.log('Deleting profile...');
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", teacherId);
-
-      if (error) throw error;
-      
-      console.log('Teacher deletion completed successfully');
-
+      console.log("Teacher deletion completed successfully");
       fetchTeachers();
       setModalState({
-        message: `${teacherName} and all associated data have been permanently deleted.`,
+        message: result.message || `${teacherName} and all associated data have been permanently deleted.`,
         type: "success",
       });
+
     } catch (error) {
       console.error("Error deleting teacher:", error);
       setModalState({

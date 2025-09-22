@@ -55,7 +55,7 @@ export default async function handler(req, res) {
         // Check if user already exists in auth.users
         console.log('Checking if user already exists with email:', email);
         const { data: existingAuthUsers, error: getUserError } = await supabase.auth.admin.listUsers();
-        
+
         if (getUserError) {
             console.error('Error checking existing users:', getUserError);
             throw new Error(`Failed to check existing users: ${getUserError.message}`);

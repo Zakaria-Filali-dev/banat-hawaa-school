@@ -48,10 +48,10 @@ export default async function handler(req, res) {
 
         // Now update the user's password
         const { error: updateError } = await supabase.auth.admin.updateUserById(
-            data.user.id, 
-            { 
+            data.user.id,
+            {
                 password: password,
-                email_confirm: true 
+                email_confirm: true
             }
         );
 
