@@ -1069,6 +1069,18 @@ This action CANNOT be undone. Are you absolutely sure?`;
     }
 
     try {
+      console.log('Starting complete deletion for student:', studentId, studentName);
+      
+      // Get student email for additional cleanup
+      const { data: studentProfile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", studentId)
+        .single();
+      
+      const studentEmail = studentProfile?.email;
+      console.log('Student email:', studentEmail);
+
       // Delete in order to handle foreign key constraints
       // 1. Delete submission files first
       const { data: submissions } = await supabase
@@ -1097,8 +1109,18 @@ This action CANNOT be undone. Are you absolutely sure?`;
         .delete()
         .eq("student_id", studentId);
 
-      // 4. Delete notifications
-      // Notification system removed. No notification delete needed.
+      // 4. Delete notifications (using both ID and email if needed)
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("user_id", studentId);
+      
+      if (studentEmail) {
+        await supabase
+          .from("notifications")
+          .delete()
+          .eq("recipient_email", studentEmail);
+      }
 
       // 5. Delete class attendance records
       await supabase
@@ -1106,13 +1128,52 @@ This action CANNOT be undone. Are you absolutely sure?`;
         .delete()
         .eq("student_id", studentId);
 
-      // 6. Finally delete the profile
+      // 6. Delete any announcements related to student (if any)
+      await supabase
+        .from("announcements")
+        .delete()
+        .eq("author_id", studentId);
+
+      // 7. Delete pending applications (in case any exist)
+      if (studentEmail) {
+        await supabase
+          .from("pending_applications")
+          .delete()
+          .eq("email", studentEmail);
+      }
+
+      // 8. Delete admin messages
+      await supabase
+        .from("admin_messages")
+        .delete()
+        .or(`sender_id.eq.${studentId},recipient_id.eq.${studentId}`);
+
+      // 9. Delete suspension records
+      await supabase
+        .from("user_suspensions")
+        .delete()
+        .eq("user_id", studentId);
+
+      // 10. Delete from Supabase Auth (this is CRITICAL!)
+      console.log('Deleting from Supabase Auth...');
+      const { error: authError } = await supabase.auth.admin.deleteUser(studentId);
+      if (authError) {
+        console.error('Auth deletion error:', authError);
+        // Continue anyway - we'll handle profile deletion
+      } else {
+        console.log('Successfully deleted from Supabase Auth');
+      }
+
+      // 11. Finally delete the profile
+      console.log('Deleting profile...');
       const { error } = await supabase
         .from("profiles")
         .delete()
         .eq("id", studentId);
 
       if (error) throw error;
+      
+      console.log('Student deletion completed successfully');
 
       fetchStudents();
       setModalState({
@@ -1152,6 +1213,18 @@ Type "DELETE" to confirm permanent deletion:`;
     if (!finalConfirm) return;
 
     try {
+      console.log('Starting complete deletion for teacher:', teacherId, teacherName);
+      
+      // Get teacher email for additional cleanup
+      const { data: teacherProfile } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("id", teacherId)
+        .single();
+      
+      const teacherEmail = teacherProfile?.email;
+      console.log('Teacher email:', teacherEmail);
+
       // Delete in order to handle foreign key constraints
       // 1. Delete assignment files first
       const { data: teacherAssignments } = await supabase
@@ -1200,13 +1273,53 @@ Type "DELETE" to confirm permanent deletion:`;
       // 8. Delete suspension records
       await supabase.from("user_suspensions").delete().eq("user_id", teacherId);
 
-      // 9. Finally delete the profile
+      // 9. Delete notifications (using both ID and email if needed)
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("user_id", teacherId);
+      
+      if (teacherEmail) {
+        await supabase
+          .from("notifications")
+          .delete()
+          .eq("recipient_email", teacherEmail);
+      }
+
+      // 10. Delete any announcements created by teacher
+      await supabase
+        .from("announcements")
+        .delete()
+        .eq("author_id", teacherId);
+
+      // 11. Delete pending applications (in case any exist)
+      if (teacherEmail) {
+        await supabase
+          .from("pending_applications")
+          .delete()
+          .eq("email", teacherEmail);
+      }
+
+      // 12. Delete from Supabase Auth (this is CRITICAL!)
+      console.log('Deleting from Supabase Auth...');
+      const { error: authError } = await supabase.auth.admin.deleteUser(teacherId);
+      if (authError) {
+        console.error('Auth deletion error:', authError);
+        // Continue anyway - we'll handle profile deletion
+      } else {
+        console.log('Successfully deleted from Supabase Auth');
+      }
+
+      // 13. Finally delete the profile
+      console.log('Deleting profile...');
       const { error } = await supabase
         .from("profiles")
         .delete()
         .eq("id", teacherId);
 
       if (error) throw error;
+      
+      console.log('Teacher deletion completed successfully');
 
       fetchTeachers();
       setModalState({
@@ -1617,21 +1730,18 @@ Type "DELETE" to confirm permanent deletion:`;
       console.log("Attempting to delete message with ID:", messageId);
 
       // Use server-side API to bypass RLS restrictions
-      const response = await fetch(
-        `${getApiBaseUrl()}/admin-delete-message`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${
-              (
-                await supabase.auth.getSession()
-              ).data.session?.access_token
-            }`,
-          },
-          body: JSON.stringify({ messageId }),
-        }
-      );
+      const response = await fetch(`${getApiBaseUrl()}/admin-delete-message`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${
+            (
+              await supabase.auth.getSession()
+            ).data.session?.access_token
+          }`,
+        },
+        body: JSON.stringify({ messageId }),
+      });
 
       console.log("Delete response status:", response.status);
 
