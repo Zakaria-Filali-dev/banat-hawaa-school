@@ -52,10 +52,41 @@ export default async function handler(req, res) {
             throw new Error("Email and full name are required");
         }
 
+        // Check if user already exists in auth.users
+        console.log('Checking if user already exists with email:', email);
+        const { data: existingAuthUsers, error: getUserError } = await supabase.auth.admin.listUsers();
+        
+        if (getUserError) {
+            console.error('Error checking existing users:', getUserError);
+            throw new Error(`Failed to check existing users: ${getUserError.message}`);
+        }
+
+        const existingAuthUser = existingAuthUsers.users?.find(user => user.email === email);
+        if (existingAuthUser) {
+            console.log('User already exists in auth.users:', existingAuthUser.id);
+            throw new Error(`A user account with email ${email} already exists. Please use a different email or contact admin.`);
+        }
+
+        // Check if profile already exists in profiles table
+        const { data: existingProfiles, error: profileCheckError } = await supabase
+            .from("profiles")
+            .select("id, email")
+            .eq("email", email)
+            .limit(1);
+
+        if (profileCheckError) {
+            console.error('Error checking existing profiles:', profileCheckError);
+            throw new Error(`Failed to check existing profiles: ${profileCheckError.message}`);
+        }
+
+        if (existingProfiles && existingProfiles.length > 0) {
+            console.log('Profile already exists in profiles table:', existingProfiles[0].id);
+            throw new Error(`A profile with email ${email} already exists. Please use a different email or contact admin.`);
+        }
+
         // Create user and send invitation email
-        console.log('Calling supabase.auth.admin.inviteUserByEmail...');
-        console.log('Email being sent to:', email);
-        console.log('Redirect URL:', `https://banat-hawaa-school.vercel.app/auth/callback`);
+        console.log('Creating new user with email:', email);
+        console.log('Redirect URL:', `https://banat-hawaa-school.vercel.app/setup-password`);
 
         const { data: userData, error: authError } = await supabase.auth.admin.inviteUserByEmail(email, {
             data: {
@@ -74,9 +105,11 @@ export default async function handler(req, res) {
         }
 
         console.log('User created successfully:', userData.user.id);
+        console.log('New user email:', userData.user.email);
+        console.log('User confirmed:', userData.user.email_confirmed_at !== null);
 
         // Create profile in profiles table
-        console.log('Creating profile in database...');
+        console.log('Creating profile in database for user ID:', userData.user.id);
         const { error: profileError } = await supabase
             .from("profiles")
             .insert([{

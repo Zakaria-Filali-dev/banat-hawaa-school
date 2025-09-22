@@ -33,11 +33,11 @@ function ProtectedRoute({ children, allowedRoles }) {
           return;
         }
         if (isMounted) setUser(data.user);
-        // Fetch role from profiles table
+        // Fetch role from profiles table using user ID for more reliable lookup
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("role")
-          .eq("email", data.user.email)
+          .eq("id", data.user.id)
           .single();
         if (profileError) throw profileError;
         if (isMounted) setRole(profile?.role);
