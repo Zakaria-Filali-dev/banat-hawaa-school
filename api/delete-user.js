@@ -35,7 +35,70 @@ export default async function handler(req, res) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        // Delete from profiles table first
+        // Get user role to determine what data to cascade delete
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+        const userRole = profile?.role;
+        console.log('User role:', userRole);
+
+        // Cascade delete based on user role
+        if (userRole === 'student') {
+            // Delete student-specific data
+            const { data: submissions } = await supabase
+                .from("assignment_submissions")
+                .select("id")
+                .eq("student_id", user.id);
+
+            if (submissions) {
+                for (const submission of submissions) {
+                    await supabase
+                        .from("submission_files")
+                        .delete()
+                        .eq("submission_id", submission.id);
+                }
+            }
+
+            await supabase.from("assignment_submissions").delete().eq("student_id", user.id);
+            await supabase.from("student_subjects").delete().eq("student_id", user.id);
+            await supabase.from("class_attendance").delete().eq("student_id", user.id);
+        } else if (userRole === 'teacher') {
+            // Delete teacher-specific data
+            const { data: teacherAssignments } = await supabase
+                .from("assignments")
+                .select("id")
+                .eq("teacher_id", user.id);
+
+            if (teacherAssignments) {
+                for (const assignment of teacherAssignments) {
+                    await supabase.storage
+                        .from("assignment-files")
+                        .remove([`${assignment.id}/`]);
+                }
+                
+                await supabase
+                    .from("assignment_submissions")
+                    .delete()
+                    .in("assignment_id", teacherAssignments.map((a) => a.id));
+            }
+
+            await supabase.from("assignments").delete().eq("teacher_id", user.id);
+            await supabase.from("class_sessions").delete().eq("teacher_id", user.id);
+            await supabase.from("teacher_subjects").delete().eq("teacher_id", user.id);
+        }
+
+        // Delete common data for all user types
+        await supabase
+            .from("admin_messages")
+            .delete()
+            .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`);
+        
+        await supabase.from("user_suspensions").delete().eq("user_id", user.id);
+
+        // Delete profile
         const { error: profileError } = await supabase
             .from('profiles')
             .delete()
@@ -43,9 +106,10 @@ export default async function handler(req, res) {
 
         if (profileError) {
             console.error('Error deleting profile:', profileError);
+            throw profileError;
         }
 
-        // Delete from auth
+        // Delete from auth (this also removes the user from Supabase Auth)
         const { error: authError } = await supabase.auth.admin.deleteUser(user.id);
         if (authError) throw authError;
 

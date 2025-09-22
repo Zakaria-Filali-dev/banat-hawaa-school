@@ -1618,7 +1618,7 @@ Type "DELETE" to confirm permanent deletion:`;
 
       // Use server-side API to bypass RLS restrictions
       const response = await fetch(
-        `${getApiBaseUrl()}/api/admin/delete-message`,
+        `${getApiBaseUrl()}/admin-delete-message`,
         {
           method: "DELETE",
           headers: {
