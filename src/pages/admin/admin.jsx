@@ -1070,34 +1070,39 @@ This action CANNOT be undone. Are you absolutely sure?`;
     }
 
     try {
-      console.log("Starting complete deletion for student:", studentId, studentName);
+      console.log(
+        "Starting complete deletion for student:",
+        studentId,
+        studentName
+      );
 
       // Call the backend API for secure deletion
-      const response = await fetch('/api/admin-delete-user', {
-        method: 'DELETE',
+      const response = await fetch("/api/admin-delete-user", {
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           userId: studentId,
-          userType: 'student',
-          userName: studentName
-        })
+          userType: "student",
+          userName: studentName,
+        }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete student');
+        throw new Error(result.error || "Failed to delete student");
       }
 
       console.log("Student deletion completed successfully");
       fetchStudents();
       setModalState({
-        message: result.message || `${studentName} and all associated data have been permanently deleted.`,
+        message:
+          result.message ||
+          `${studentName} and all associated data have been permanently deleted.`,
         type: "success",
       });
-
     } catch (error) {
       console.error("Error deleting student:", error);
       setModalState({
@@ -1132,34 +1137,39 @@ Type "DELETE" to confirm permanent deletion:`;
     if (!finalConfirm) return;
 
     try {
-      console.log("Starting complete deletion for teacher:", teacherId, teacherName);
+      console.log(
+        "Starting complete deletion for teacher:",
+        teacherId,
+        teacherName
+      );
 
       // Call the backend API for secure deletion
-      const response = await fetch('/api/admin-delete-user', {
-        method: 'DELETE',
+      const response = await fetch("/api/admin-delete-user", {
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           userId: teacherId,
-          userType: 'teacher',
-          userName: teacherName
-        })
+          userType: "teacher",
+          userName: teacherName,
+        }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete teacher');
+        throw new Error(result.error || "Failed to delete teacher");
       }
 
       console.log("Teacher deletion completed successfully");
       fetchTeachers();
       setModalState({
-        message: result.message || `${teacherName} and all associated data have been permanently deleted.`,
+        message:
+          result.message ||
+          `${teacherName} and all associated data have been permanently deleted.`,
         type: "success",
       });
-
     } catch (error) {
       console.error("Error deleting teacher:", error);
       setModalState({

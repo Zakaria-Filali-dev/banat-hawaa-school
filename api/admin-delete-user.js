@@ -36,12 +36,14 @@ export default async function handler(req, res) {
             .select("email")
             .eq("id", userId)
             .single();
-        
+
         const userEmail = userProfile?.email;
         console.log('User email:', userEmail);
 
         // Delete based on user type
         if (userType === 'student') {
+            console.log('Deleting student-specific data...');
+            
             // Delete submission files first
             const { data: submissions } = await supabase
                 .from("assignment_submissions")
@@ -63,34 +65,49 @@ export default async function handler(req, res) {
             await supabase.from("class_attendance").delete().eq("student_id", userId);
 
         } else if (userType === 'teacher') {
-            // Delete assignment files first
+            console.log('Deleting teacher-specific data...');
+            
+            // Delete assignment attachments first
             const { data: teacherAssignments } = await supabase
                 .from("assignments")
                 .select("id")
                 .eq("teacher_id", userId);
 
             if (teacherAssignments) {
+                // Delete assignment attachments
                 for (const assignment of teacherAssignments) {
+                    await supabase
+                        .from("assignment_attachments")
+                        .delete()
+                        .eq("assignment_id", assignment.id);
+                    
+                    // Delete storage files
                     await supabase.storage
                         .from("assignment-files")
                         .remove([`${assignment.id}/`]);
                 }
                 
+                // Delete all submissions for teacher's assignments
                 await supabase
                     .from("assignment_submissions")
                     .delete()
                     .in("assignment_id", teacherAssignments.map((a) => a.id));
             }
 
+            // CRITICAL: Delete teacher-subject relationships (this was missing!)
+            console.log('Deleting teacher_subjects relationships...');
+            await supabase.from("teacher_subjects").delete().eq("teacher_id", userId);
+
             // Delete teacher-specific data
             await supabase.from("assignments").delete().eq("teacher_id", userId);
             await supabase.from("class_sessions").delete().eq("teacher_id", userId);
-            await supabase.from("teacher_subjects").delete().eq("teacher_id", userId);
         }
 
-        // Delete common data for all user types
+        // Delete documents uploaded by this user (for both students and teachers)
+        console.log('Deleting documents uploaded by user...');
+        await supabase.from("documents").delete().eq("uploaded_by", userId);        // Delete common data for all user types
         await supabase.from("notifications").delete().eq("user_id", userId);
-        
+
         if (userEmail) {
             await supabase.from("notifications").delete().eq("recipient_email", userEmail);
             await supabase.from("pending_applications").delete().eq("email", userEmail);
@@ -108,8 +125,8 @@ export default async function handler(req, res) {
         const { error: authError } = await supabase.auth.admin.deleteUser(userId);
         if (authError) {
             console.error('Auth deletion error:', authError);
-            return res.status(500).json({ 
-                error: 'Failed to delete from Supabase Auth: ' + authError.message 
+            return res.status(500).json({
+                error: 'Failed to delete from Supabase Auth: ' + authError.message
             });
         }
         console.log('Successfully deleted from Supabase Auth');
@@ -123,22 +140,22 @@ export default async function handler(req, res) {
 
         if (profileError) {
             console.error('Profile deletion error:', profileError);
-            return res.status(500).json({ 
-                error: 'Failed to delete profile: ' + profileError.message 
+            return res.status(500).json({
+                error: 'Failed to delete profile: ' + profileError.message
             });
         }
 
         console.log(`${userType} deletion completed successfully`);
 
-        return res.status(200).json({ 
-            success: true, 
-            message: `${userType} ${userName} deleted successfully from all systems` 
+        return res.status(200).json({
+            success: true,
+            message: `${userType} ${userName} deleted successfully from all systems`
         });
 
     } catch (err) {
         console.error('Unexpected error during user deletion:', err);
-        return res.status(500).json({ 
-            error: 'Internal server error while deleting user: ' + err.message 
+        return res.status(500).json({
+            error: 'Internal server error while deleting user: ' + err.message
         });
     }
 }
