@@ -40,26 +40,9 @@ export default function SetupPassword() {
       setError(result.error || "Failed to set password.");
       return;
     }
-    // Fetch user info to get role
-    let dashboardRoute = "/dashboard";
-    try {
-      const userRes = await fetch("/api/get-user-role", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-      const userInfo = await userRes.json();
-      if (userInfo.role === "teacher") dashboardRoute = "/teacher/dashboard";
-      else if (userInfo.role === "student")
-        dashboardRoute = "/student/dashboard";
-      else if (userInfo.role === "admin") dashboardRoute = "/admin/dashboard";
-    } catch (err) {
-      // fallback to generic dashboard
-      console.log("error: ", err);
-    }
-    setSuccess("Password set successfully! Redirecting to your dashboard...");
+    setSuccess("Password set successfully! Redirecting to sign in page...");
     setTimeout(() => {
-      navigate(dashboardRoute);
+      navigate("/login");
     }, 2000);
   };
 
