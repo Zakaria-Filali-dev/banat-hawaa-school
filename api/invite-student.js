@@ -157,6 +157,37 @@ export default async function handler(req, res) {
             }
         }
 
+        // CRITICAL FIX: For teachers, assign them to selected subjects in teacher_subjects table
+        if (role === 'teacher' && subjects && subjects.length > 0) {
+            console.log('Assigning teacher to subjects:', subjects);
+            const { data: subjectData, error: subjectError } = await supabase
+                .from("subjects")
+                .select("id, name")
+                .in("name", subjects);
+
+            if (subjectError) {
+                console.error("Teacher subject lookup error:", subjectError);
+                // Don't throw here, just log it
+            } else if (subjectData && subjectData.length > 0) {
+                const assignments = subjectData.map(subject => ({
+                    teacher_id: userData.user.id,
+                    subject_id: subject.id,
+                    assigned_at: new Date().toISOString(),
+                }));
+
+                const { error: assignError } = await supabase
+                    .from("teacher_subjects")
+                    .insert(assignments);
+
+                if (assignError) {
+                    console.error("Teacher subject assignment error:", assignError);
+                    // Don't throw here, just log it
+                } else {
+                    console.log('Teacher successfully assigned to subjects');
+                }
+            }
+        }
+
         console.log('=== SUCCESS: User creation completed ===');
         return res.status(200).json({
             success: true,

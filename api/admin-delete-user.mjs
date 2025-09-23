@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         // Delete based on user type
         if (userType === 'student') {
             console.log('Deleting student-specific data...');
-            
+
             // Delete submission files first
             const { data: submissions } = await supabase
                 .from("assignment_submissions")
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
 
         } else if (userType === 'teacher') {
             console.log('Deleting teacher-specific data...');
-            
+
             // Delete assignment attachments first
             const { data: teacherAssignments } = await supabase
                 .from("assignments")
@@ -80,13 +80,13 @@ export default async function handler(req, res) {
                         .from("assignment_attachments")
                         .delete()
                         .eq("assignment_id", assignment.id);
-                    
+
                     // Delete storage files
                     await supabase.storage
                         .from("assignment-files")
                         .remove([`${assignment.id}/`]);
                 }
-                
+
                 // Delete all submissions for teacher's assignments
                 await supabase
                     .from("assignment_submissions")

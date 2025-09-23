@@ -172,9 +172,40 @@ export default function Students() {
 
   const fetchStudentData = async (userId) => {
     try {
+      // CRITICAL FIX: First get student's enrolled subjects
+      const { data: enrolledSubjects, error: enrollError } = await supabase
+        .from("student_subjects")
+        .select("subject_id")
+        .eq("student_id", userId)
+        .eq("status", "active");
+
+      if (enrollError)
+        console.error("[Student] enrollment error:", enrollError);
+
+      const subjectIds = enrolledSubjects?.map((s) => s.subject_id) || [];
+      console.log("[Student] enrolled subject IDs:", subjectIds);
+
+      // If student has no enrolled subjects, show empty data
+      if (subjectIds.length === 0) {
+        console.log("[Student] No enrolled subjects, showing empty data");
+        setAssignments([]);
+        setSubmissions([]);
+        setAnnouncements([]);
+        setSchedule([]);
+        return;
+      }
+
+      // FIXED: Only fetch assignments for student's enrolled subjects
       const { data: assignmentsData, error: aErr } = await supabase
         .from("assignments")
-        .select("*")
+        .select(
+          `
+          *,
+          subjects(name),
+          teacher:profiles!assignments_teacher_id_fkey(full_name)
+        `
+        )
+        .in("subject_id", subjectIds)
         .eq("is_published", true)
         .order("created_at", { ascending: false });
       if (aErr) console.error("[Student] assignments error:", aErr);
@@ -184,25 +215,44 @@ export default function Students() {
         .select(
           `
           *,
-          assignments(title, points)
+          assignments(title, points, subjects(name))
         `
         )
         .eq("student_id", userId)
         .order("submitted_at", { ascending: false });
       if (sErr) console.error("[Student] submissions error:", sErr);
 
+      // FIXED: Filter announcements for student's subjects OR general announcements
       const { data: announcementsData, error: anErr } = await supabase
         .from("announcements")
-        .select("*")
-        .or("target_audience.eq.all,target_audience.eq.students")
+        .select(
+          `
+          *,
+          author:profiles!announcements_author_id_fkey(full_name),
+          subjects(name)
+        `
+        )
+        .or(
+          `target_audience.eq.all,target_audience.eq.students,and(target_audience.eq.subject_students,subject_id.in.(${subjectIds.join(
+            ","
+          )}))`
+        )
         .eq("is_published", true)
         .order("created_at", { ascending: false });
       if (anErr) console.error("[Student] announcements error:", anErr);
 
       const today = new Date().toISOString().split("T")[0];
+      // FIXED: Only fetch class sessions for student's enrolled subjects
       const { data: scheduleData, error: cErr } = await supabase
         .from("class_sessions")
-        .select("*")
+        .select(
+          `
+          *,
+          subjects(name),
+          teacher:profiles!class_sessions_teacher_id_fkey(full_name)
+        `
+        )
+        .in("subject_id", subjectIds)
         .eq("approval_status", "approved")
         .gte("session_date", today)
         .order("session_date", { ascending: true });
@@ -307,10 +357,12 @@ export default function Students() {
         .select("*", { count: "exact", head: true })
         .eq("student_id", userId);
 
-      // Count total assignments available
+      // Count total assignments available for student's enrolled subjects
+      const subjectIds = subjects.map((s) => s.id);
       const { count: assignmentCount } = await supabase
         .from("assignments")
         .select("*", { count: "exact", head: true })
+        .in("subject_id", subjectIds)
         .eq("is_published", true);
 
       // Calculate average grade

@@ -48,6 +48,12 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- PROFILES POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
+DROP POLICY IF EXISTS "Teachers can view student profiles in their subjects" ON profiles;
+
 CREATE POLICY "Users can view own profile" ON profiles
     FOR SELECT USING (id = auth.uid());
 
@@ -62,11 +68,16 @@ CREATE POLICY "Teachers can view student profiles in their subjects" ON profiles
         role = 'student' AND EXISTS (
             SELECT 1 FROM student_subjects ss
             JOIN subjects s ON ss.subject_id = s.id
-            WHERE ss.student_id = id AND s.teacher_id = auth.uid()
+            WHERE ss.student_id = profiles.id AND s.teacher_id = auth.uid()
         )
     );
 
 -- SUBJECTS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Everyone can view active subjects" ON subjects;
+DROP POLICY IF EXISTS "Admins can manage all subjects" ON subjects;
+DROP POLICY IF EXISTS "Teachers can update their assigned subjects" ON subjects;
+
 CREATE POLICY "Everyone can view active subjects" ON subjects
     FOR SELECT USING (status = 'active');
 
@@ -77,6 +88,10 @@ CREATE POLICY "Teachers can update their assigned subjects" ON subjects
     FOR UPDATE USING (teacher_id = auth.uid());
 
 -- PENDING APPLICATIONS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Only admins can view applications" ON pending_applications;
+DROP POLICY IF EXISTS "Only admins can manage applications" ON pending_applications;
+
 CREATE POLICY "Only admins can view applications" ON pending_applications
     FOR SELECT USING (is_admin(auth.uid()));
 
@@ -84,6 +99,11 @@ CREATE POLICY "Only admins can manage applications" ON pending_applications
     FOR ALL USING (is_admin(auth.uid()));
 
 -- STUDENT SUBJECTS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Students can view their enrollments" ON student_subjects;
+DROP POLICY IF EXISTS "Admins can manage all enrollments" ON student_subjects;
+DROP POLICY IF EXISTS "Teachers can view enrollments in their subjects" ON student_subjects;
+
 CREATE POLICY "Students can view their enrollments" ON student_subjects
     FOR SELECT USING (student_id = auth.uid());
 
@@ -94,6 +114,12 @@ CREATE POLICY "Teachers can view enrollments in their subjects" ON student_subje
     FOR SELECT USING (is_teacher_of_subject(auth.uid(), subject_id));
 
 -- ANNOUNCEMENTS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users see announcements based on audience" ON announcements;
+DROP POLICY IF EXISTS "Admins can create school-wide announcements" ON announcements;
+DROP POLICY IF EXISTS "Teachers can create subject announcements" ON announcements;
+DROP POLICY IF EXISTS "Authors can update their announcements" ON announcements;
+
 CREATE POLICY "Users see announcements based on audience" ON announcements
     FOR SELECT USING (
         is_published = true AND (
@@ -117,6 +143,11 @@ CREATE POLICY "Authors can update their announcements" ON announcements
     FOR UPDATE USING (author_id = auth.uid());
 
 -- DOCUMENTS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Students can view public documents in their subjects" ON documents;
+DROP POLICY IF EXISTS "Teachers can manage documents in their subjects" ON documents;
+DROP POLICY IF EXISTS "Admins can manage all documents" ON documents;
+
 CREATE POLICY "Students can view public documents in their subjects" ON documents
     FOR SELECT USING (
         is_public = true AND 
@@ -133,6 +164,11 @@ CREATE POLICY "Admins can manage all documents" ON documents
     FOR ALL USING (is_admin(auth.uid()));
 
 -- ASSIGNMENTS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Students can view assignments in their subjects" ON assignments;
+DROP POLICY IF EXISTS "Teachers can manage assignments in their subjects" ON assignments;
+DROP POLICY IF EXISTS "Admins can view all assignments" ON assignments;
+
 CREATE POLICY "Students can view assignments in their subjects" ON assignments
     FOR SELECT USING (
         is_published = true AND is_student_enrolled(auth.uid(), subject_id)
@@ -145,6 +181,11 @@ CREATE POLICY "Admins can view all assignments" ON assignments
     FOR SELECT USING (is_admin(auth.uid()));
 
 -- ASSIGNMENT SUBMISSIONS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Students can view/create their own submissions" ON assignment_submissions;
+DROP POLICY IF EXISTS "Teachers can view submissions for their assignments" ON assignment_submissions;
+DROP POLICY IF EXISTS "Teachers can grade submissions for their assignments" ON assignment_submissions;
+
 CREATE POLICY "Students can view/create their own submissions" ON assignment_submissions
     FOR ALL USING (student_id = auth.uid());
 
@@ -165,6 +206,11 @@ CREATE POLICY "Teachers can grade submissions for their assignments" ON assignme
     );
 
 -- NOTIFICATIONS POLICIES
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Users can view their notifications" ON notifications;
+DROP POLICY IF EXISTS "Users can update their notifications" ON notifications;
+DROP POLICY IF EXISTS "System can create notifications" ON notifications;
+
 CREATE POLICY "Users can view their notifications" ON notifications
     FOR SELECT USING (recipient_id = auth.uid());
 
@@ -172,4 +218,5 @@ CREATE POLICY "Users can update their notifications" ON notifications
     FOR UPDATE USING (recipient_id = auth.uid());
 
 CREATE POLICY "System can create notifications" ON notifications
-    FOR INSERT WITH CHECK (true); -- Will be handled by backend with service role
+    FOR INSERT WITH CHECK (true); 
+-- Will be handled by backend with service role
