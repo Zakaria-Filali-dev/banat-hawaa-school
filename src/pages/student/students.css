@@ -640,64 +640,527 @@ html {
     border: 1px solid rgba(72, 187, 120, 0.3);
 }
 
-/* Submission Modal */
-.submission-modal {
+/* ================================
+   MODAL SYSTEM - Enhanced with smooth animations and better responsiveness
+   ================================ */
+
+/* Universal Modal Overlay */
+.modal-overlay,
+.grade-details-overlay,
+.submission-modal,
+.logout-modal {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.75);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
     padding: 1rem;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    /* Smooth entrance animation */
+    animation: modalFadeIn 0.3s ease-out;
+    transition: all 0.3s ease-out;
 }
 
-.submission-modal-content {
-    background: rgba(255, 255, 255, 0.95);
-    color: #333;
-    border-radius: 12px;
-    padding: 2rem;
-    max-width: 600px;
+/* Modal fade in animation */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
+    }
+
+    to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+}
+
+/* Universal Modal Content */
+.modal-content,
+.grade-details-modal,
+.submission-modal-content,
+.logout-modal-content {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow:
+        0 25px 50px rgba(0, 0, 0, 0.3),
+        0 10px 20px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    color: #1a202c;
     width: 100%;
-    max-height: 80vh;
-    overflow-y: auto;
-    backdrop-filter: blur(10px);
+    max-width: 600px;
+    max-height: 85vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    /* Smooth entrance animation */
+    animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center;
 }
 
-.submission-modal h2 {
-    margin-bottom: 1rem;
-    color: #333;
+/* Modal slide in animation */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.7) translateY(50px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem 1rem 2rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 20px 20px 0 0;
+    position: relative;
+}
+
+.modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(102, 126, 234, 0.3) 20%,
+            rgba(118, 75, 162, 0.3) 80%,
+            transparent);
+}
+
+.modal-header h2,
+.modal-header h3 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Close Button */
+.close-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.close-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s ease;
+}
+
+.close-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.close-btn:hover::before {
+    left: 100%;
+}
+
+.close-btn:active {
+    transform: scale(0.95);
+}
+
+/* Modal Body */
+.modal-content {
+    padding: 1.5rem 2rem 2rem 2rem;
+    overflow-y: auto;
+    flex: 1;
+
+    /* Custom scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.5) rgba(255, 255, 255, 0.1);
+}
+
+.modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.7);
+}
+
+/* Modal Buttons */
+.modal-buttons,
+.logout-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.modal-buttons button,
+.logout-buttons button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Primary Button */
+.modal-buttons .btn-primary,
+.logout-buttons .btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.modal-buttons .btn-primary:hover,
+.logout-buttons .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+/* Secondary Button */
+.modal-buttons .btn-secondary,
+.logout-buttons .btn-secondary {
+    background: rgba(107, 114, 128, 0.1);
+    color: #4b5563;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.modal-buttons .btn-secondary:hover,
+.logout-buttons .btn-secondary:hover {
+    background: rgba(107, 114, 128, 0.2);
+    transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+
+    .modal-overlay,
+    .grade-details-overlay,
+    .submission-modal,
+    .logout-modal {
+        padding: 0.5rem;
+        align-items: flex-end;
+    }
+
+    .modal-content,
+    .grade-details-modal,
+    .submission-modal-content,
+    .logout-modal-content {
+        max-height: 95vh;
+        border-radius: 20px 20px 0 0;
+        margin-bottom: 0;
+        animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal-header {
+        padding: 1.25rem 1.5rem 1rem 1.5rem;
+    }
+
+    .modal-header h2,
+    .modal-header h3 {
+        font-size: 1.3rem;
+    }
+
+    .modal-content {
+        padding: 1.25rem 1.5rem 1.5rem 1.5rem;
+    }
+
+    .modal-buttons,
+    .logout-buttons {
+        flex-direction: column-reverse;
+        gap: 0.75rem;
+    }
+
+    .modal-buttons button,
+    .logout-buttons button {
+        width: 100%;
+        padding: 1rem;
+    }
+}
+
+/* Mobile slide up animation */
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(100%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+
+    .modal-overlay,
+    .grade-details-overlay,
+    .submission-modal,
+    .logout-modal {
+        padding: 0;
+    }
+
+    .modal-content,
+    .grade-details-modal,
+    .submission-modal-content,
+    .logout-modal-content {
+        border-radius: 0;
+        max-height: 100vh;
+        height: 100vh;
+    }
+
+    .modal-header {
+        border-radius: 0;
+    }
+}
+
+/* ================================
+   FORM STYLES - Enhanced for modals
+   ================================ */
 
 .submission-form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    color: #374151;
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-input,
+.submission-form textarea,
+.submission-form input[type="text"],
+.submission-form input[type="email"],
+.submission-form select {
+    padding: 1rem;
+    border: 2px solid rgba(209, 213, 219, 0.8);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.form-input:focus,
+.submission-form textarea:focus,
+.submission-form input:focus,
+.submission-form select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow:
+        0 0 0 4px rgba(102, 126, 234, 0.15),
+        0 4px 12px rgba(102, 126, 234, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+    transform: translateY(-1px);
 }
 
 .submission-form textarea {
     min-height: 120px;
-    padding: 1rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    font-family: inherit;
     resize: vertical;
+    font-family: inherit;
+    line-height: 1.6;
 }
 
-.submission-form textarea:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+/* File Upload Styles */
+.file-upload-area {
+    border: 2px dashed rgba(102, 126, 234, 0.4);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    background: rgba(102, 126, 234, 0.05);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
 }
 
-.modal-buttons {
+.file-upload-area::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg,
+            transparent,
+            rgba(102, 126, 234, 0.1),
+            transparent);
+    transform: rotate(-45deg);
+    transition: all 0.6s ease;
+    opacity: 0;
+}
+
+.file-upload-area:hover {
+    border-color: var(--primary);
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateY(-2px);
+}
+
+.file-upload-area:hover::before {
+    opacity: 1;
+    transform: rotate(-45deg) translate(50%, 50%);
+}
+
+.file-upload-area.dragover {
+    border-color: var(--primary);
+    background: rgba(102, 126, 234, 0.15);
+    transform: scale(1.02);
+}
+
+.file-upload-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+    opacity: 0.7;
+}
+
+.file-upload-text {
+    color: #6b7280;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.file-upload-hint {
+    color: #9ca3af;
+    font-size: 0.85rem;
+}
+
+/* Uploaded Files Display */
+.uploaded-files {
     display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    justify-content: flex-end;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.uploaded-file {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 10px;
+    color: #065f46;
+    transition: all 0.2s ease;
+}
+
+.uploaded-file:hover {
+    background: rgba(16, 185, 129, 0.15);
+    transform: translateY(-1px);
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.file-icon {
+    font-size: 1.2rem;
+}
+
+.file-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.file-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.file-size {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.remove-file-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #dc2626;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+}
+
+.remove-file-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    transform: scale(1.05);
 }
 
 .modal-buttons button {
@@ -871,51 +1334,328 @@ html {
     }
 }
 
-/* Logout Modal */
-.logout-modal {
+/* ================================
+   SUCCESS/ERROR/INFO MESSAGE SYSTEM
+   ================================ */
+
+/* Message Container */
+.message-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 2rem;
+    right: 2rem;
+    z-index: 1100;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+/* Base Message Styles */
+.message,
+.message-success,
+.message-error,
+.message-info,
+.message-warning {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.15),
+        0 10px 20px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border-left: 5px solid;
+    pointer-events: auto;
+    cursor: pointer;
+
+    /* Smooth entrance animation */
+    animation: messageSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Message entrance animation */
+@keyframes messageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%) scale(0.8);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+/* Message exit animation */
+@keyframes messageSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100%) scale(0.8);
+    }
+}
+
+/* Message hover effect */
+.message:hover,
+.message-success:hover,
+.message-error:hover,
+.message-info:hover,
+.message-warning:hover {
+    transform: translateY(-2px);
+    box-shadow:
+        0 25px 50px rgba(0, 0, 0, 0.2),
+        0 15px 30px rgba(0, 0, 0, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Success Message */
+.message-success {
+    border-left-color: var(--success);
+    color: #065f46;
+}
+
+.message-success::before {
+    content: '✅';
+    font-size: 1.2rem;
+    margin-right: 0.75rem;
+    display: inline-block;
+}
+
+/* Error Message */
+.message-error {
+    border-left-color: var(--danger);
+    color: #7f1d1d;
+}
+
+.message-error::before {
+    content: '❌';
+    font-size: 1.2rem;
+    margin-right: 0.75rem;
+    display: inline-block;
+}
+
+/* Info Message */
+.message-info {
+    border-left-color: var(--info);
+    color: #1e3a8a;
+}
+
+.message-info::before {
+    content: 'ℹ️';
+    font-size: 1.2rem;
+    margin-right: 0.75rem;
+    display: inline-block;
+}
+
+/* Warning Message */
+.message-warning {
+    border-left-color: var(--warning);
+    color: #78350f;
+}
+
+.message-warning::before {
+    content: '⚠️';
+    font-size: 1.2rem;
+    margin-right: 0.75rem;
+    display: inline-block;
+}
+
+/* Message Title */
+.message h3,
+.message-success h3,
+.message-error h3,
+.message-info h3,
+.message-warning h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* Message Text */
+.message p,
+.message-success p,
+.message-error p,
+.message-info p,
+.message-warning p {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    opacity: 0.9;
+}
+
+/* Auto-dismiss timer bar */
+.message::after,
+.message-success::after,
+.message-error::after,
+.message-info::after,
+.message-warning::after {
+    content: '';
+    position: absolute;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
+    left: 0;
+    height: 3px;
+    background: currentColor;
+    opacity: 0.3;
+    animation: messageTimer 5s linear;
+}
+
+@keyframes messageTimer {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}
+
+/* Loading Spinner for messages */
+.message-loading {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-top: 2px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Messages */
+@media (max-width: 768px) {
+    .message-container {
+        top: 1rem;
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+    }
+
+    .message,
+    .message-success,
+    .message-error,
+    .message-info,
+    .message-warning {
+        padding: 1rem 1.25rem;
+        border-radius: 12px;
+    }
+
+    @keyframes messageSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-100%) scale(0.9);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    @keyframes messageSlideOut {
+        from {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(-100%) scale(0.9);
+        }
+    }
+}
+
+/* ================================
+   NOTIFICATION BADGES & INDICATORS
+   ================================ */
+
+/* Notification Badge */
+.notification-badge {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    font-size: 0.75rem;
+    font-weight: 700;
+    position: relative;
+    margin-left: 0.5rem;
+    box-shadow:
+        0 4px 12px rgba(239, 68, 68, 0.4),
+        0 2px 6px rgba(239, 68, 68, 0.3);
+
+    /* Pulse animation for attention */
+    animation: pulse 2s infinite;
 }
 
-.logout-modal-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    text-align: center;
-    max-width: 400px;
-    margin: 1rem;
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow:
+            0 4px 12px rgba(239, 68, 68, 0.4),
+            0 2px 6px rgba(239, 68, 68, 0.3);
+    }
+
+    50% {
+        transform: scale(1.1);
+        box-shadow:
+            0 6px 16px rgba(239, 68, 68, 0.5),
+            0 3px 8px rgba(239, 68, 68, 0.4);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow:
+            0 4px 12px rgba(239, 68, 68, 0.4),
+            0 2px 6px rgba(239, 68, 68, 0.3);
+    }
 }
 
-.logout-modal-content h3 {
-    color: #333;
-    margin-bottom: 1rem;
+/* New indicator dot */
+.new-indicator {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid white;
+    animation: pulseNew 1.5s infinite;
 }
 
-.logout-modal-content p {
-    color: #666;
-    margin-bottom: 2rem;
-}
+@keyframes pulseNew {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 
-.logout-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-}
-
-.logout-buttons button {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 500;
+    50% {
+        opacity: 0.7;
+        transform: scale(1.2);
+    }
 }
 
 .btn-logout {

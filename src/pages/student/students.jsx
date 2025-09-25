@@ -39,8 +39,55 @@ export default function Students() {
   });
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
   const [suspensionInfo, setSuspensionInfo] = useState(null);
+  const [notifications, setNotifications] = useState([]); // For showing success/error messages
   const submissionFormRef = useRef(null);
   const navigate = useNavigate();
+
+  // Message utility functions
+  const showMessage = (text, type = "info", duration = 5000) => {
+    const id = Date.now();
+    const newMessage = { id, text, type, timestamp: Date.now() };
+    setNotifications((prev) => [...prev, newMessage]);
+
+    // Auto remove after duration
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((msg) => msg.id !== id));
+    }, duration);
+
+    // Smooth scroll to show message
+    if (type === "error") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const showSuccess = (text) => {
+    showMessage(text, "success");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const showError = (text) => {
+    showMessage(text, "error");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const showWarning = (text) => {
+    showMessage(text, "warning");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Render notifications in message container
+  useEffect(() => {
+    const container = document.getElementById("message-container");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    notifications.forEach((notification) => {
+      const messageDiv = document.createElement("div");
+      messageDiv.className = `message ${notification.type}`;
+      messageDiv.textContent = notification.text;
+      messageDiv.style.animation = "messageSlideIn 0.3s ease-out forwards";
+      container.appendChild(messageDiv);
+    });
+  }, [notifications]);
 
   useEffect(() => {
     (async () => {
@@ -436,7 +483,7 @@ export default function Students() {
       !selectedAssignment ||
       (!submissionFiles.length && !submissionText.trim())
     ) {
-      alert("Please provide either files or text for your submission.");
+      showWarning("Please provide either files or text for your submission.");
       return;
     }
 
@@ -457,7 +504,7 @@ export default function Students() {
 
       if (submitError) {
         console.error("Submission error:", submitError);
-        alert("Failed to submit assignment. Please try again.");
+        showError("Failed to submit assignment. Please try again.");
         return;
       }
 
@@ -478,7 +525,7 @@ export default function Students() {
 
         if (filesError) {
           console.error("File records error:", filesError);
-          alert(
+          showError(
             "Files uploaded but failed to save file records. Please contact support."
           );
         }
@@ -487,10 +534,10 @@ export default function Students() {
       // Refresh data
       await fetchStudentData(user.id);
       setShowSubmissionForm(false);
-      alert("Assignment submitted successfully!");
+      showSuccess("Assignment submitted successfully!");
     } catch (err) {
       console.error("Submit assignment error:", err);
-      alert("Failed to submit assignment. Please try again.");
+      showError("Failed to submit assignment. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -555,6 +602,23 @@ export default function Students() {
 
   return (
     <div className="student-container">
+      {/* Message Container */}
+      <div className="message-container">
+        {notifications.map((notification) => (
+          <div
+            key={notification.id}
+            className={`message-${notification.type}`}
+            onClick={() =>
+              setNotifications((prev) =>
+                prev.filter((msg) => msg.id !== notification.id)
+              )
+            }
+          >
+            <p>{notification.text}</p>
+          </div>
+        ))}
+      </div>
+
       {showGradeDetails && selectedGradedSubmission && (
         <div className="grade-details-overlay">
           <div className="grade-details-modal">
@@ -716,7 +780,7 @@ export default function Students() {
           onClick={() => {
             setActiveTab("assignments");
             // Mark assignments as viewed to clear new assignment notifications
-            setUnreadCounts(prev => ({...prev, assignments: 0}));
+            setUnreadCounts((prev) => ({ ...prev, assignments: 0 }));
           }}
         >
           📝 Assignments ({assignments?.length || 0})
@@ -1303,6 +1367,9 @@ export default function Students() {
         suspensionInfo={suspensionInfo}
         onLogout={handleLogout}
       />
+
+      {/* Message Container */}
+      <div id="message-container" className="message-container"></div>
     </div>
   );
 }
