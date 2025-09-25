@@ -712,16 +712,23 @@ const Admin = () => {
   const handleCreateAnnouncement = async (e) => {
     e.preventDefault();
     try {
-      const { data: user } = await supabase.auth.getUser();
+      // Use the already-stored user instead of fetching again
+      if (!user || !user.id) {
+        throw new Error("User not authenticated properly");
+      }
+
+      console.log("Creating announcement with user ID:", user.id);
+
       const { data, error } = await supabase
         .from("announcements")
         .insert([
           {
             title: newAnnouncement.title,
             content: newAnnouncement.content,
-            author_id: user.user.id,
+            author_id: user.id,
             target_audience: newAnnouncement.targetAudience,
             priority: newAnnouncement.priority,
+            is_published: true,
           },
         ])
         .select();
