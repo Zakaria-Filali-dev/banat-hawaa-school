@@ -34,10 +34,10 @@ RETURNS BOOLEAN AS $$
 BEGIN
     -- Check both the old subjects.teacher_id field AND the new teacher_subjects table
     RETURN (
-        (SELECT teacher_id = user_id FROM subjects WHERE id = subject_id) OR
+        (SELECT s.teacher_id = user_id FROM subjects s WHERE s.id = subject_id) OR
         EXISTS (
-            SELECT 1 FROM teacher_subjects 
-            WHERE teacher_id = user_id AND subject_id = subject_id
+            SELECT 1 FROM teacher_subjects ts 
+            WHERE ts.teacher_id = user_id AND ts.subject_id = subject_id
         )
     );
 END;
