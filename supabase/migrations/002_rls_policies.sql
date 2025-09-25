@@ -29,27 +29,27 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Helper function to check if user is teacher of subject
-CREATE OR REPLACE FUNCTION is_teacher_of_subject(user_id UUID, subject_id UUID)
+CREATE OR REPLACE FUNCTION is_teacher_of_subject(user_id UUID, subject_id_arg UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
     -- Check both the old subjects.teacher_id field AND the new teacher_subjects table
     RETURN (
-        (SELECT s.teacher_id = user_id FROM subjects s WHERE s.id = subject_id) OR
+        (SELECT s.teacher_id = user_id FROM subjects s WHERE s.id = subject_id_arg) OR
         EXISTS (
             SELECT 1 FROM teacher_subjects ts 
-            WHERE ts.teacher_id = user_id AND ts.subject_id = subject_id
+            WHERE ts.teacher_id = user_id AND ts.subject_id = subject_id_arg
         )
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Helper function to check if student is enrolled in subject
-CREATE OR REPLACE FUNCTION is_student_enrolled(student_id UUID, subject_id UUID)
+CREATE OR REPLACE FUNCTION is_student_enrolled(student_id_arg UUID, subject_id_arg UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
         SELECT 1 FROM student_subjects 
-        WHERE student_id = student_id AND subject_id = subject_id AND status = 'active'
+        WHERE student_id = student_id_arg AND subject_id = subject_id_arg AND status = 'active'
     );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
