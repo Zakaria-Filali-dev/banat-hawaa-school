@@ -215,7 +215,7 @@ export default function Students() {
         .select(
           `
           *,
-          assignments(title, points, subjects(name))
+          assignments(title, max_score, subjects(name))
         `
         )
         .eq("student_id", userId)
@@ -713,7 +713,11 @@ export default function Students() {
         </button>
         <button
           className={activeTab === "assignments" ? "tab-btn active" : "tab-btn"}
-          onClick={() => setActiveTab("assignments")}
+          onClick={() => {
+            setActiveTab("assignments");
+            // Mark assignments as viewed to clear new assignment notifications
+            setUnreadCounts(prev => ({...prev, assignments: 0}));
+          }}
         >
           📝 Assignments ({assignments?.length || 0})
           {unreadCounts.assignments > 0 && (
@@ -861,8 +865,8 @@ export default function Students() {
                       <small>
                         Created: {formatDate(assignment.created_at)}
                       </small>
-                      {assignment.points && (
-                        <small>Points: {assignment.points}</small>
+                      {assignment.max_score && (
+                        <small>Points: {assignment.max_score}</small>
                       )}
                     </div>
 
