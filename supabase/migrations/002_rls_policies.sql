@@ -32,7 +32,14 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION is_teacher_of_subject(user_id UUID, subject_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
-    RETURN (SELECT teacher_id = user_id FROM subjects WHERE id = subject_id);
+    -- Check both the old subjects.teacher_id field AND the new teacher_subjects table
+    RETURN (
+        (SELECT teacher_id = user_id FROM subjects WHERE id = subject_id) OR
+        EXISTS (
+            SELECT 1 FROM teacher_subjects 
+            WHERE teacher_id = user_id AND subject_id = subject_id
+        )
+    );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
