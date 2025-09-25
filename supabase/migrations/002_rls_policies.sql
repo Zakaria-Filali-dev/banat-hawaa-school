@@ -91,12 +91,23 @@ CREATE POLICY "Teachers can update their assigned subjects" ON subjects
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Only admins can view applications" ON pending_applications;
 DROP POLICY IF EXISTS "Only admins can manage applications" ON pending_applications;
+DROP POLICY IF EXISTS "Anyone can create applications" ON pending_applications;
+DROP POLICY IF EXISTS "Admins can update/delete applications" ON pending_applications;
 
+-- Allow anyone (including anonymous users) to create applications
+CREATE POLICY "Anyone can create applications" ON pending_applications
+    FOR INSERT WITH CHECK (true);
+
+-- Only admins can view applications
 CREATE POLICY "Only admins can view applications" ON pending_applications
     FOR SELECT USING (is_admin(auth.uid()));
 
-CREATE POLICY "Only admins can manage applications" ON pending_applications
-    FOR ALL USING (is_admin(auth.uid()));
+-- Only admins can update/delete applications
+CREATE POLICY "Admins can update/delete applications" ON pending_applications
+    FOR UPDATE USING (is_admin(auth.uid()));
+
+CREATE POLICY "Admins can delete applications" ON pending_applications
+    FOR DELETE USING (is_admin(auth.uid()));
 
 -- STUDENT SUBJECTS POLICIES
 -- Drop existing policies if they exist
