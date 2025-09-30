@@ -374,73 +374,9 @@ textarea {
     color: white !important;
 }
 
-/* Modal Enhancements */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    padding: 1rem;
-}
+/* Modal Enhancements - REMOVED DUPLICATE: Keep the enhanced version at line 2976 */
 
-.modal-content {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    max-width: 600px;
-    width: 100%;
-    max-height: 90vh;
-    overflow-y: auto;
-    backdrop-filter: blur(30px);
-    -webkit-backdrop-filter: blur(30px);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 2rem 2rem 1rem 2rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-header h3 {
-    color: var(--text-primary);
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-}
-
-.modal-body {
-    padding: 2rem;
-}
-
-.modal-footer {
-    padding: 1rem 2rem 2rem 2rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
+/* REMOVED OLD MODAL STYLES - Keep the enhanced versions starting at line ~2963 */
 
 .action-buttons {
     display: flex;
@@ -1734,184 +1670,7 @@ select option:checked {
     min-width: 120px;
 }
 
-/* Subject Assignment Modal */
-.subject-assign-modal {
-    max-width: 600px;
-    width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-header h3 {
-    margin: 0;
-    color: var(--text-primary);
-    font-size: 1.3rem;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.close-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-.modal-description {
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 1.5rem;
-    line-height: 1.5;
-}
-
-.subjects-selection-grid {
-    display: grid;
-    gap: 1rem;
-    max-height: 300px;
-    overflow-y: auto;
-    padding-right: 0.5rem;
-}
-
-.subject-selection-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.subject-selection-item:hover:not(.disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.subject-selection-item.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.subject-selection-item input[type="checkbox"] {
-    margin-top: 0.25rem;
-    width: 18px;
-    height: 18px;
-    accent-color: #4ecdc4;
-    cursor: pointer;
-}
-
-.subject-selection-item.disabled input[type="checkbox"] {
-    cursor: not-allowed;
-}
-
-.subject-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.subject-name {
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 1rem;
-}
-
-.subject-description {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.85rem;
-    line-height: 1.4;
-}
-
-.assigned-to {
-    color: #f39c12;
-    font-size: 0.8rem;
-    font-style: italic;
-}
-
-.no-teacher-warning {
-    color: #ef4444;
-    font-size: 0.8rem;
-    font-style: italic;
-    font-weight: 500;
-}
-
-.subject-selection-item .teacher-info {
-    color: #22c55e;
-    font-size: 0.8rem;
-    font-style: italic;
-}
-
-.no-subjects-message {
-    text-align: center;
-    padding: 2rem;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 1rem;
-    padding: 1.5rem;
-    border-top: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-footer .btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-/* Responsive adjustments for teacher management */
-@media (max-width: 768px) {
-    .teacher-card {
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .teacher-actions {
-        flex-direction: row;
-        width: 100%;
-        min-width: auto;
-    }
-
-    .subjects-checkbox-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .subject-assign-modal {
-        width: 95%;
-        max-height: 90vh;
-    }
-
-    .modal-footer {
-        flex-direction: column;
-    }
-
-    .modal-footer .btn {
-        width: 100%;
-    }
-}
+/* OLD SUBJECT ASSIGNMENT MODAL STYLES REMOVED - Keep the enhanced versions starting at line ~2957 */
 
 /* Chrome Performance Optimizations */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
@@ -2972,7 +2731,7 @@ html {
     }
 }
 
-/* Modal Styles */
+/* Modal Styles - Admin Dashboard */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -2990,6 +2749,29 @@ html {
     animation: modalFadeIn 0.3s ease-out;
 }
 
+/* Ensure admin modals always have dark theme - Higher specificity */
+.admin-container .modal-overlay .modal-content,
+.modal-overlay .modal-content.subject-assign-modal {
+    background: rgba(30, 41, 59, 0.95) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Force text visibility in admin modals */
+.modal-overlay .modal-content h3,
+.modal-overlay .modal-content .modal-header h3,
+.modal-overlay .modal-content .subject-name,
+.modal-overlay .modal-content .modal-description,
+.modal-overlay .modal-content p,
+.modal-overlay .modal-content label {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.modal-overlay .modal-content .subject-description,
+.modal-overlay .modal-content .teacher-email {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
 @keyframes modalFadeIn {
     from {
         opacity: 0;
@@ -3003,8 +2785,9 @@ html {
 }
 
 .modal-content {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
+    /* Use fallback values to ensure dark theme works even outside admin-container */
+    background: var(--glass-bg, rgba(30, 41, 59, 0.9));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
     border-radius: 20px;
     padding: 0;
     backdrop-filter: blur(20px);
@@ -3014,7 +2797,7 @@ html {
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    color: var(--text-primary);
+    color: var(--text-primary, rgba(255, 255, 255, 0.95));
     animation: modalSlideIn 0.3s ease-out;
     position: relative;
 }
@@ -3129,7 +2912,7 @@ html {
 
 .modal-header {
     padding: 2rem;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -3141,8 +2924,8 @@ html {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-primary);
-    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: var(--text-primary, rgba(255, 255, 255, 0.95));
+    background: linear-gradient(135deg, var(--primary-color, #667eea), var(--accent-color, #48bb78));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -3177,7 +2960,7 @@ html {
 
 .modal-description {
     margin: 0 0 1.5rem 0;
-    color: var(--text-secondary);
+    color: var(--text-secondary, rgba(255, 255, 255, 0.7));
     font-size: 0.95rem;
     line-height: 1.6;
 }
@@ -3193,8 +2976,8 @@ html {
     align-items: flex-start;
     gap: 0.75rem;
     padding: 1rem;
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
+    background: var(--glass-bg, rgba(30, 41, 59, 0.6));
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -3234,13 +3017,13 @@ html {
 
 .subject-name {
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--text-primary, rgba(255, 255, 255, 0.95));
     font-size: 1rem;
 }
 
 .subject-description {
     font-size: 0.875rem;
-    color: var(--text-secondary);
+    color: var(--text-secondary, rgba(255, 255, 255, 0.7));
     line-height: 1.4;
 }
 
@@ -3287,7 +3070,7 @@ html {
 
 .modal-footer {
     padding: 1.5rem 2rem;
-    border-top: 1px solid var(--glass-border);
+    border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.2));
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
