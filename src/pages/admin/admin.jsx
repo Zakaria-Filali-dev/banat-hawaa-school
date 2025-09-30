@@ -8,6 +8,8 @@ import AnnouncementEditModal from "../../components/AnnouncementEditModal";
 import MultipleTeacherAssignModal from "../../components/MultipleTeacherAssignModal";
 import "./admin.css";
 
+// Removed parent/guardian information from student application cards
+
 // API base URL for production deployment
 const getApiBaseUrl = () => {
   // For production on Vercel, use serverless functions
