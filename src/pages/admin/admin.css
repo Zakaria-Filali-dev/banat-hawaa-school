@@ -14,6 +14,17 @@
     --glass-border: var(--glass-border-admin);
 }
 
+/* Performance and Stability Fixes */
+* {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.admin-container *:hover {
+    will-change: transform;
+    transform: translateZ(0);
+}
+
 /* CORRECTED DROPDOWN Z-INDEX - PROPER LAYERING */
 select,
 .form-input select,
@@ -852,7 +863,7 @@ textarea {
 
 .approve-btn:hover {
     background: var(--success-dark);
-    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
 }
 
 .reject-btn {
@@ -1050,7 +1061,6 @@ select option:checked {
 }
 
 .teacher-card:hover, .subject-card:hover, .student-card:hover {
-    transform: translateY(-2px);
     box-shadow: var(--shadow-hover);
     z-index: 2;
 }
