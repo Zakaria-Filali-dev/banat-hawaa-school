@@ -68,9 +68,6 @@ export default function Teachers() {
         )
         .eq("teacher_id", user.id);
 
-      console.log("FetchTeacherSubjects data:", data);
-      console.log("FetchTeacherSubjects error:", error);
-
       if (error) throw error;
       setTeacherSubjects(data?.map((ts) => ts.subject).filter(Boolean) || []);
     } catch (error) {
@@ -101,7 +98,7 @@ export default function Teachers() {
       }
 
       // Fetch teacher subjects with student count
-      const { data: teacherSubjectsData, error: subjectsError } = await supabase
+      const { data: teacherSubjectsData } = await supabase
         .from("teacher_subjects")
         .select(
           `
@@ -113,13 +110,9 @@ export default function Teachers() {
         )
         .eq("teacher_id", userId);
 
-      console.log("Teacher subjects data:", teacherSubjectsData);
-      console.log("Teacher subjects error:", subjectsError);
-
       // Get subjects array from the data
       const subjects =
         teacherSubjectsData?.map((ts) => ts.subject).filter(Boolean) || [];
-      console.log("Processed subjects:", subjects);
 
       // Count unique students across all subjects (separate query for better performance)
       let uniqueStudents = new Set();

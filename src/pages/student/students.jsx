@@ -230,11 +230,9 @@ export default function Students() {
         console.error("[Student] enrollment error:", enrollError);
 
       const subjectIds = enrolledSubjects?.map((s) => s.subject_id) || [];
-      console.log("[Student] enrolled subject IDs:", subjectIds);
 
       // If student has no enrolled subjects, show empty data
       if (subjectIds.length === 0) {
-        console.log("[Student] No enrolled subjects, showing empty data");
         setAssignments([]);
         setSubmissions([]);
         setAnnouncements([]);
@@ -378,7 +376,7 @@ export default function Students() {
       }
 
       // Fetch student subjects
-      const { data: studentSubjectsData, error: subjectsError } = await supabase
+      const { data: studentSubjectsData } = await supabase
         .from("student_subjects")
         .select(
           `
@@ -390,13 +388,9 @@ export default function Students() {
         )
         .eq("student_id", userId);
 
-      console.log("Student subjects data:", studentSubjectsData);
-      console.log("Student subjects error:", subjectsError);
-
       // Get subjects array from the data
       const subjects =
         studentSubjectsData?.map((ss) => ss.subject).filter(Boolean) || [];
-      console.log("Processed student subjects:", subjects);
 
       // Count total submissions
       const { count: submissionCount } = await supabase

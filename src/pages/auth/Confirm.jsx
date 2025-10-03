@@ -16,13 +16,8 @@ export default function Confirm() {
   useEffect(() => {
     const checkAuthState = async () => {
       try {
-        console.log("🔍 DEBUG Confirm - Starting auth check");
         // First check if user is already authenticated (from AuthCallback redirect)
         const { data: sessionData } = await supabase.auth.getSession();
-        console.log(
-          "🔍 DEBUG Confirm - Session data:",
-          sessionData?.session?.user ? "User present" : "No user"
-        );
 
         if (sessionData?.session?.user) {
           // Get user profile for welcome message

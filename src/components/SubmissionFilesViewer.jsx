@@ -40,9 +40,6 @@ const SubmissionFilesViewer = ({ files, title = "Submitted Files" }) => {
 
   const handleImageClick = (clickedFile) => {
     try {
-      console.log("Image clicked:", clickedFile);
-      console.log("Available image files:", imageFiles);
-
       // Validate the file has necessary properties
       if (!clickedFile || (!clickedFile.file_url && !clickedFile.url)) {
         console.error("Invalid file data for image viewer:", clickedFile);
@@ -52,7 +49,6 @@ const SubmissionFilesViewer = ({ files, title = "Submitted Files" }) => {
       const imageIndex = imageFiles.findIndex(
         (img) => img.id === clickedFile.id
       );
-      console.log("Found image index:", imageIndex);
 
       setInitialImageIndex(imageIndex >= 0 ? imageIndex : 0);
       setShowImageViewer(true);

@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 
 const ImageViewer = ({ images, initialIndex = 0, onClose }) => {
-  console.log("ImageViewer props:", { images, initialIndex });
-
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [zoom, setZoom] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -11,7 +9,6 @@ const ImageViewer = ({ images, initialIndex = 0, onClose }) => {
   const [loading, setLoading] = useState(true);
 
   const currentImage = images[currentIndex];
-  console.log("Current image:", currentImage);
 
   // Define helper functions first to avoid hoisting issues
   const getImageUrl = useCallback((file) => {

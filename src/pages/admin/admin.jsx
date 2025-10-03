@@ -719,8 +719,6 @@ const Admin = () => {
         throw new Error("User not authenticated properly");
       }
 
-      console.log("Creating announcement with user ID:", user.id);
-
       const { data, error } = await supabase
         .from("announcements")
         .insert([
@@ -1079,12 +1077,6 @@ This action CANNOT be undone. Are you absolutely sure?`;
     }
 
     try {
-      console.log(
-        "Starting complete deletion for student:",
-        studentId,
-        studentName
-      );
-
       // Call the backend API for secure deletion
       const response = await fetch("/api/admin-delete-user", {
         method: "DELETE",
@@ -1104,7 +1096,6 @@ This action CANNOT be undone. Are you absolutely sure?`;
         throw new Error(result.error || "Failed to delete student");
       }
 
-      console.log("Student deletion completed successfully");
       fetchStudents();
       setModalState({
         message:
@@ -1146,12 +1137,6 @@ Type "DELETE" to confirm permanent deletion:`;
     if (!finalConfirm) return;
 
     try {
-      console.log(
-        "Starting complete deletion for teacher:",
-        teacherId,
-        teacherName
-      );
-
       // Call the backend API for secure deletion
       const response = await fetch("/api/admin-delete-user", {
         method: "DELETE",
@@ -1171,7 +1156,6 @@ Type "DELETE" to confirm permanent deletion:`;
         throw new Error(result.error || "Failed to delete teacher");
       }
 
-      console.log("Teacher deletion completed successfully");
       fetchTeachers();
       setModalState({
         message:
@@ -1580,8 +1564,6 @@ Type "DELETE" to confirm permanent deletion:`;
   // Message Management Handlers
   const handleDeleteMessage = async (messageId) => {
     try {
-      console.log("Attempting to delete message with ID:", messageId);
-
       // Use server-side API to bypass RLS restrictions
       const response = await fetch(`${getApiBaseUrl()}/admin-delete-message`, {
         method: "DELETE",
@@ -1596,16 +1578,11 @@ Type "DELETE" to confirm permanent deletion:`;
         body: JSON.stringify({ messageId }),
       });
 
-      console.log("Delete response status:", response.status);
-
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Delete response error:", errorData);
         throw new Error(errorData.error || "Failed to delete message");
       }
-
-      const result = await response.json();
-      console.log("Delete success:", result);
 
       await fetchMessages();
       setModalState({
@@ -3221,7 +3198,6 @@ Type "DELETE" to confirm permanent deletion:`;
                         <button
                           className="btn btn-sm btn-danger"
                           onClick={() => {
-                            console.log("Setting message to delete:", message);
                             setMessageToDelete(message);
                             setShowDeleteMessageModal(true);
                           }}
