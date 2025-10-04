@@ -32,43 +32,79 @@ export default function Login() {
         return;
       }
 
+      console.log("Login successful, user ID:", data.user.id);
+      console.log("Waiting for profile lookup...");
+
+      // Set a backup timeout to prevent infinite loading
+      const backupTimeout = setTimeout(() => {
+        console.log("Backup timeout reached - forcing page refresh");
+        setErrorMsg("Login taking too long. Refreshing page...");
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }, 8000); // 8 second backup
+
       // Wait a moment for auth state to propagate, then check profile
-      setTimeout(async () => {
+      const profileTimeout = setTimeout(async () => {
         try {
+          console.log("Starting profile lookup for user:", data.user.id);
+
           const { data: profile, error: profileError } = await supabase
             .from("profiles")
             .select("role")
             .eq("id", data.user.id)
             .single();
 
+          console.log("Profile lookup result:", { profile, profileError });
+
           if (profileError) {
             console.error("Profile lookup error:", profileError);
-            setErrorMsg("Profile lookup failed. Please try again.");
+            setErrorMsg(`Profile lookup failed: ${profileError.message}`);
             setLoading(false);
             return;
           }
 
+          if (!profile) {
+            console.error("No profile found for user");
+            setErrorMsg("User profile not found. Please contact support.");
+            setLoading(false);
+            return;
+          }
+
+          console.log("User role:", profile.role);
+          console.log("Navigating to dashboard...");
+
+          // Clear the backup timeout since we're succeeding
+          clearTimeout(backupTimeout);
+
           // Redirect based on role
           switch (profile.role) {
             case "admin":
+              console.log("Redirecting to admin dashboard");
               navigate("/admin", { replace: true });
               break;
             case "teacher":
+              console.log("Redirecting to teacher dashboard");
               navigate("/teacher", { replace: true });
               break;
             case "student":
+              console.log("Redirecting to student dashboard");
               navigate("/student", { replace: true });
               break;
             default:
-              setErrorMsg("Invalid user role. Please contact support.");
+              console.error("Invalid role:", profile.role);
+              setErrorMsg(
+                `Invalid user role: ${profile.role}. Please contact support.`
+              );
               setLoading(false);
           }
         } catch (profileError) {
           console.error("Profile fetch error:", profileError);
-          setErrorMsg("Failed to get user profile. Please try again.");
+          clearTimeout(backupTimeout);
+          setErrorMsg(`Failed to get user profile: ${profileError.message}`);
           setLoading(false);
         }
-      }, 1000); // Wait 1 second for auth state to settle
+      }, 2000); // Increased to 2 seconds for auth state to settle
     } catch (error) {
       console.error("Login error:", error);
       setErrorMsg("Unexpected error. Please try again.");
