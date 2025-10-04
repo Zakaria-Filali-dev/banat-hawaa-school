@@ -145,7 +145,8 @@ export default function Students() {
         setLoading(false);
       }
     })();
-  }, [handleAuthError, fetchStudentData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleAuthError]);
 
   const markMessagesAsRead = useCallback(async () => {
     try {
@@ -256,275 +257,269 @@ export default function Students() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [user?.id, fetchPersonalInfo, handleAuthError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, handleAuthError]);
 
-  const fetchStudentData = useCallback(
-    async (userId) => {
-      try {
-        // CRITICAL FIX: First get student's enrolled subjects
-        const { data: enrolledSubjects, error: enrollError } = await supabase
-          .from("student_subjects")
-          .select("subject_id")
-          .eq("student_id", userId)
-          .eq("status", "active");
+  const fetchStudentData = async (userId) => {
+    try {
+      // CRITICAL FIX: First get student's enrolled subjects
+      const { data: enrolledSubjects, error: enrollError } = await supabase
+        .from("student_subjects")
+        .select("subject_id")
+        .eq("student_id", userId)
+        .eq("status", "active");
 
-        if (enrollError) {
-          console.error("[Student] enrollment error:", enrollError);
-          // If we can't fetch enrollments, it might mean the student record was deleted
-          if (
-            enrollError.code === "PGRST116" ||
-            enrollError.message?.includes("No rows")
-          ) {
-            await handleAuthError(enrollError, "student enrollment access");
-            return;
-          }
-        }
-
-        const subjectIds = enrolledSubjects?.map((s) => s.subject_id) || [];
-
-        // If student has no enrolled subjects, show empty data
-        if (subjectIds.length === 0) {
-          setAssignments([]);
-          setSubmissions([]);
-          setAnnouncements([]);
-          setSchedule([]);
+      if (enrollError) {
+        console.error("[Student] enrollment error:", enrollError);
+        // If we can't fetch enrollments, it might mean the student record was deleted
+        if (
+          enrollError.code === "PGRST116" ||
+          enrollError.message?.includes("No rows")
+        ) {
+          await handleAuthError(enrollError, "student enrollment access");
           return;
         }
+      }
 
-        // FIXED: Only fetch assignments for student's enrolled subjects
-        const { data: assignmentsData, error: aErr } = await supabase
-          .from("assignments")
-          .select(
-            `
+      const subjectIds = enrolledSubjects?.map((s) => s.subject_id) || [];
+
+      // If student has no enrolled subjects, show empty data
+      if (subjectIds.length === 0) {
+        setAssignments([]);
+        setSubmissions([]);
+        setAnnouncements([]);
+        setSchedule([]);
+        return;
+      }
+
+      // FIXED: Only fetch assignments for student's enrolled subjects
+      const { data: assignmentsData, error: aErr } = await supabase
+        .from("assignments")
+        .select(
+          `
           *,
           subjects(name),
           teacher:profiles!assignments_teacher_id_fkey(full_name)
         `
-          )
-          .in("subject_id", subjectIds)
-          .eq("is_published", true)
-          .order("created_at", { ascending: false });
-        if (aErr) console.error("[Student] assignments error:", aErr);
+        )
+        .in("subject_id", subjectIds)
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
+      if (aErr) console.error("[Student] assignments error:", aErr);
 
-        const { data: submissionsData, error: sErr } = await supabase
-          .from("assignment_submissions")
-          .select(
-            `
+      const { data: submissionsData, error: sErr } = await supabase
+        .from("assignment_submissions")
+        .select(
+          `
           *,
           assignments(title, max_score, subjects(name))
         `
-          )
-          .eq("student_id", userId)
-          .order("submitted_at", { ascending: false });
-        if (sErr) console.error("[Student] submissions error:", sErr);
+        )
+        .eq("student_id", userId)
+        .order("submitted_at", { ascending: false });
+      if (sErr) console.error("[Student] submissions error:", sErr);
 
-        // FIXED: Filter announcements for student's subjects OR general announcements
-        const { data: announcementsData, error: anErr } = await supabase
-          .from("announcements")
-          .select(
-            `
+      // FIXED: Filter announcements for student's subjects OR general announcements
+      const { data: announcementsData, error: anErr } = await supabase
+        .from("announcements")
+        .select(
+          `
           *,
           author:profiles!announcements_author_id_fkey(full_name),
           subjects(name)
         `
-          )
-          .or(
-            `target_audience.eq.all,target_audience.eq.students,and(target_audience.eq.subject_students,subject_id.in.(${subjectIds.join(
-              ","
-            )}))`
-          )
-          .eq("is_published", true)
-          .order("created_at", { ascending: false });
-        if (anErr) console.error("[Student] announcements error:", anErr);
+        )
+        .or(
+          `target_audience.eq.all,target_audience.eq.students,and(target_audience.eq.subject_students,subject_id.in.(${subjectIds.join(
+            ","
+          )}))`
+        )
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
+      if (anErr) console.error("[Student] announcements error:", anErr);
 
-        const today = new Date().toISOString().split("T")[0];
-        // FIXED: Only fetch class sessions for student's enrolled subjects
-        const { data: scheduleData, error: cErr } = await supabase
-          .from("class_sessions")
-          .select(
-            `
+      const today = new Date().toISOString().split("T")[0];
+      // FIXED: Only fetch class sessions for student's enrolled subjects
+      const { data: scheduleData, error: cErr } = await supabase
+        .from("class_sessions")
+        .select(
+          `
           *,
           subjects(name),
           teacher:profiles!class_sessions_teacher_id_fkey(full_name)
         `
-          )
-          .in("subject_id", subjectIds)
-          .eq("approval_status", "approved")
-          .gte("session_date", today)
-          .order("session_date", { ascending: true });
-        if (cErr) console.error("[Student] class_sessions error:", cErr);
+        )
+        .in("subject_id", subjectIds)
+        .eq("approval_status", "approved")
+        .gte("session_date", today)
+        .order("session_date", { ascending: true });
+      if (cErr) console.error("[Student] class_sessions error:", cErr);
 
-        const { data: messagesData, error: mErr } = await supabase
-          .from("admin_messages")
-          .select("*")
-          .eq("recipient_id", userId)
-          .order("created_at", { ascending: false });
-        if (mErr) console.error("[Student] messages error:", mErr);
+      const { data: messagesData, error: mErr } = await supabase
+        .from("admin_messages")
+        .select("*")
+        .eq("recipient_id", userId)
+        .order("created_at", { ascending: false });
+      if (mErr) console.error("[Student] messages error:", mErr);
 
-        console.debug("[Student] counts:", {
-          assignments: assignmentsData?.length || 0,
-          submissions: submissionsData?.length || 0,
-          announcements: announcementsData?.length || 0,
-          schedule: scheduleData?.length || 0,
-          messages: messagesData?.length || 0,
-        });
+      console.debug("[Student] counts:", {
+        assignments: assignmentsData?.length || 0,
+        submissions: submissionsData?.length || 0,
+        announcements: announcementsData?.length || 0,
+        schedule: scheduleData?.length || 0,
+        messages: messagesData?.length || 0,
+      });
 
-        setAssignments(assignmentsData || []);
-        setSubmissions(submissionsData || []);
-        setAnnouncements(announcementsData || []);
-        setSchedule(scheduleData || []);
-        setMessages(messagesData || []);
+      setAssignments(assignmentsData || []);
+      setSubmissions(submissionsData || []);
+      setAnnouncements(announcementsData || []);
+      setSchedule(scheduleData || []);
+      setMessages(messagesData || []);
 
-        // Calculate unread counts
-        const unreadMessages =
-          messagesData?.filter((m) => !m.is_read).length || 0;
-        const newAssignments =
-          assignmentsData?.filter((a) => {
-            const hasSubmission = submissionsData?.some(
-              (s) => s.assignment_id === a.id
-            );
-            return !hasSubmission;
-          }).length || 0;
-
-        // Count new graded submissions that haven't been viewed
-        const newGradedSubmissions =
-          submissionsData?.filter(
-            (s) => s.score != null && s.graded_at != null && !s.grade_viewed_at
-          ).length || 0;
-
-        setUnreadCounts({
-          messages: unreadMessages,
-          announcements: 0, // Could implement read tracking for announcements
-          assignments: newAssignments,
-          gradedSubmissions: newGradedSubmissions,
-        });
-
-        // Fetch personal info
-        await fetchPersonalInfo(userId);
-      } catch (err) {
-        console.error("[Student] data load error:", err);
-        // If there's a critical error in data loading that suggests account issues, redirect
-        if (
-          err.message?.includes("permission") ||
-          err.message?.includes("access") ||
-          err.code === "PGRST301"
-        ) {
-          await handleAuthError(err, "data access");
-        }
-      }
-    },
-    [handleAuthError, fetchPersonalInfo]
-  );
-
-  const fetchPersonalInfo = useCallback(
-    async (userId) => {
-      try {
-        // Fetch user profile
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId)
-          .single();
-
-        // If profile doesn't exist (deleted account), redirect to landing page
-        if (profileError) {
-          if (
-            profileError.code === "PGRST116" ||
-            profileError.message?.includes("No rows")
-          ) {
-            await handleAuthError(profileError, "profile deleted");
-            return;
-          }
-          // For other profile errors, also redirect as it indicates account issues
-          await handleAuthError(profileError, "profile access");
-          return;
-        }
-
-        // If no profile data returned, account likely deleted
-        if (!profile) {
-          await handleAuthError(
-            new Error("Profile not found"),
-            "missing profile"
+      // Calculate unread counts
+      const unreadMessages =
+        messagesData?.filter((m) => !m.is_read).length || 0;
+      const newAssignments =
+        assignmentsData?.filter((a) => {
+          const hasSubmission = submissionsData?.some(
+            (s) => s.assignment_id === a.id
           );
+          return !hasSubmission;
+        }).length || 0;
+
+      // Count new graded submissions that haven't been viewed
+      const newGradedSubmissions =
+        submissionsData?.filter(
+          (s) => s.score != null && s.graded_at != null && !s.grade_viewed_at
+        ).length || 0;
+
+      setUnreadCounts({
+        messages: unreadMessages,
+        announcements: 0, // Could implement read tracking for announcements
+        assignments: newAssignments,
+        gradedSubmissions: newGradedSubmissions,
+      });
+
+      // Fetch personal info
+      await fetchPersonalInfo(userId);
+    } catch (err) {
+      console.error("[Student] data load error:", err);
+      // If there's a critical error in data loading that suggests account issues, redirect
+      if (
+        err.message?.includes("permission") ||
+        err.message?.includes("access") ||
+        err.code === "PGRST301"
+      ) {
+        await handleAuthError(err, "data access");
+      }
+    }
+  };
+
+  const fetchPersonalInfo = async (userId) => {
+    try {
+      // Fetch user profile
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      // If profile doesn't exist (deleted account), redirect to landing page
+      if (profileError) {
+        if (
+          profileError.code === "PGRST116" ||
+          profileError.message?.includes("No rows")
+        ) {
+          await handleAuthError(profileError, "profile deleted");
           return;
         }
+        // For other profile errors, also redirect as it indicates account issues
+        await handleAuthError(profileError, "profile access");
+        return;
+      }
 
-        // Check if user is suspended
-        if (profile?.status === "suspended") {
-          setSuspensionInfo({
-            category: "Account Suspended",
-            details: "Your account has been suspended by an administrator.",
-            date: new Date().toISOString(),
-          });
-          setShowSuspensionModal(true);
-          return; // Don't proceed with other data fetching
-        }
+      // If no profile data returned, account likely deleted
+      if (!profile) {
+        await handleAuthError(
+          new Error("Profile not found"),
+          "missing profile"
+        );
+        return;
+      }
 
-        // Fetch student subjects
-        const { data: studentSubjectsData } = await supabase
-          .from("student_subjects")
-          .select(
-            `
+      // Check if user is suspended
+      if (profile?.status === "suspended") {
+        setSuspensionInfo({
+          category: "Account Suspended",
+          details: "Your account has been suspended by an administrator.",
+          date: new Date().toISOString(),
+        });
+        setShowSuspensionModal(true);
+        return; // Don't proceed with other data fetching
+      }
+
+      // Fetch student subjects
+      const { data: studentSubjectsData } = await supabase
+        .from("student_subjects")
+        .select(
+          `
           subject:subjects(
             id, 
             name
           )
         `
-          )
-          .eq("student_id", userId);
+        )
+        .eq("student_id", userId);
 
-        // Get subjects array from the data
-        const subjects =
-          studentSubjectsData?.map((ss) => ss.subject).filter(Boolean) || [];
+      // Get subjects array from the data
+      const subjects =
+        studentSubjectsData?.map((ss) => ss.subject).filter(Boolean) || [];
 
-        // Count total submissions
-        const { count: submissionCount } = await supabase
-          .from("assignment_submissions")
-          .select("*", { count: "exact", head: true })
-          .eq("student_id", userId);
+      // Count total submissions
+      const { count: submissionCount } = await supabase
+        .from("assignment_submissions")
+        .select("*", { count: "exact", head: true })
+        .eq("student_id", userId);
 
-        // Count total assignments available for student's enrolled subjects
-        const subjectIds = subjects.map((s) => s.id);
-        const { count: assignmentCount } = await supabase
-          .from("assignments")
-          .select("*", { count: "exact", head: true })
-          .in("subject_id", subjectIds)
-          .eq("is_published", true);
+      // Count total assignments available for student's enrolled subjects
+      const subjectIds = subjects.map((s) => s.id);
+      const { count: assignmentCount } = await supabase
+        .from("assignments")
+        .select("*", { count: "exact", head: true })
+        .in("subject_id", subjectIds)
+        .eq("is_published", true);
 
-        // Calculate average grade
-        const { data: gradedSubmissions } = await supabase
-          .from("assignment_submissions")
-          .select("score")
-          .eq("student_id", userId)
-          .not("score", "is", null);
+      // Calculate average grade
+      const { data: gradedSubmissions } = await supabase
+        .from("assignment_submissions")
+        .select("score")
+        .eq("student_id", userId)
+        .not("score", "is", null);
 
-        let averageGrade = null;
-        if (gradedSubmissions && gradedSubmissions.length > 0) {
-          const totalGrade = gradedSubmissions.reduce(
-            (sum, sub) => sum + (sub.score || 0),
-            0
-          );
-          averageGrade =
-            Math.round((totalGrade / gradedSubmissions.length) * 10) / 10;
-        }
-
-        setPersonalInfo({
-          profile,
-          subjects: subjects,
-          totalSubmissions: submissionCount || 0,
-          totalAssignments: assignmentCount || 0,
-          averageGrade,
-          joinDate: profile?.created_at,
-        });
-      } catch (error) {
-        console.error("Error fetching personal info:", error);
-        // If there's a critical error fetching personal info, redirect to landing page
-        await handleAuthError(error, "personal info fetch");
+      let averageGrade = null;
+      if (gradedSubmissions && gradedSubmissions.length > 0) {
+        const totalGrade = gradedSubmissions.reduce(
+          (sum, sub) => sum + (sub.score || 0),
+          0
+        );
+        averageGrade =
+          Math.round((totalGrade / gradedSubmissions.length) * 10) / 10;
       }
-    },
-    [handleAuthError]
-  );
 
+      setPersonalInfo({
+        profile,
+        subjects: subjects,
+        totalSubmissions: submissionCount || 0,
+        totalAssignments: assignmentCount || 0,
+        averageGrade,
+        joinDate: profile?.created_at,
+      });
+    } catch (error) {
+      console.error("Error fetching personal info:", error);
+      // If there's a critical error fetching personal info, redirect to landing page
+      await handleAuthError(error, "personal info fetch");
+    }
+  };
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
