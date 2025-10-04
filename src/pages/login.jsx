@@ -7,12 +7,38 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [lastAttemptTime, setLastAttemptTime] = useState(0);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+
+    // Rate limiting: Allow max 5 attempts per 5 minutes
+    const currentTime = Date.now();
+    const timeSinceLastAttempt = currentTime - lastAttemptTime;
+    const fiveMinutes = 5 * 60 * 1000;
+
+    // Reset attempts if more than 5 minutes have passed
+    if (timeSinceLastAttempt > fiveMinutes) {
+      setLoginAttempts(0);
+    }
+
+    // Check if too many attempts
+    if (loginAttempts >= 5) {
+      const timeRemaining = Math.ceil(
+        (fiveMinutes - timeSinceLastAttempt) / 1000 / 60
+      );
+      setErrorMsg(
+        `Too many login attempts. Please try again in ${timeRemaining} minute(s).`
+      );
+      return;
+    }
+
     setLoading(true);
+    setLastAttemptTime(currentTime);
+    setLoginAttempts((prev) => prev + 1);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -44,6 +70,9 @@ export default function Login() {
         setLoading(false);
         return;
       }
+
+      // Reset login attempts on successful login
+      setLoginAttempts(0);
 
       // Redirect based on role
       switch (profile.role) {
