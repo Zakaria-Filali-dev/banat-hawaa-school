@@ -641,7 +641,7 @@ export default function Students() {
                 )}
               </div>
 
-              {selectedGradedSubmission.score != null && (
+              {(selectedGradedSubmission.score != null || selectedGradedSubmission.score === 0) && (
                 <div className="grade-section">
                   <div className="score-header">
                     <div className="score-icon">🎯</div>
@@ -650,19 +650,24 @@ export default function Students() {
                   <div className="grade-display">
                     <div className="grade-score">
                       <span className="score-number">
-                        {selectedGradedSubmission.score}
+                        {selectedGradedSubmission.score ?? 'N/A'}
                       </span>
-                      {(selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points) && (
+                      {(selectedGradedSubmission.assignments?.points ||
+                        selectedGradedSubmission.assignment?.points) && (
                         <span className="score-total">
-                          / {selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points}
+                          /{" "}
+                          {selectedGradedSubmission.assignments?.points ||
+                            selectedGradedSubmission.assignment?.points}
                         </span>
                       )}
                     </div>
-                    {(selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points) && (
+                    {(selectedGradedSubmission.assignments?.points ||
+                      selectedGradedSubmission.assignment?.points) && (
                       <div className="grade-percentage">
                         {Math.round(
                           (selectedGradedSubmission.score /
-                            (selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points)) *
+                            (selectedGradedSubmission.assignments?.points ||
+                              selectedGradedSubmission.assignment?.points)) *
                             100
                         )}
                         %
@@ -670,15 +675,33 @@ export default function Students() {
                     )}
                     <div className="grade-status">
                       {(() => {
-                        const totalPoints = selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points;
+                        const totalPoints =
+                          selectedGradedSubmission.assignments?.points ||
+                          selectedGradedSubmission.assignment?.points;
                         if (!totalPoints) return "✅ Graded";
-                        const percentage = (selectedGradedSubmission.score / totalPoints) * 100;
+                        const percentage =
+                          (selectedGradedSubmission.score / totalPoints) * 100;
                         if (percentage >= 90) return "🌟 Excellent!";
                         if (percentage >= 80) return "🎉 Great job!";
                         if (percentage >= 70) return "👍 Good work!";
                         if (percentage >= 60) return "📚 Keep studying!";
                         return "💪 Room for improvement";
                       })()}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Debug: Show when no score is available */}
+              {(selectedGradedSubmission.score == null && selectedGradedSubmission.score !== 0) && (
+                <div className="grade-section" style={{background: '#f59e0b'}}>
+                  <div className="score-header">
+                    <div className="score-icon">⏳</div>
+                    <h4>GRADE PENDING</h4>
+                  </div>
+                  <div className="grade-display">
+                    <div className="grade-status">
+                      Not yet graded by teacher
                     </div>
                   </div>
                 </div>
