@@ -95,7 +95,10 @@ function App() {
         <Route path="/auth/confirm" element={<Confirm />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/auth/set-password" element={<SetPassword />} />
-        <Route path="/setup-password" element={<SetupPassword />} />
+        <Route
+          path="/setup-password"
+          element={<Navigate to="/auth/set-password" replace />}
+        />
         <Route path="/" element={<Landing />} />
         {/* 404 fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />
