@@ -67,16 +67,29 @@ export default function SetPassword() {
     setCapsLockOn(capsLock);
   };
 
-  // Check session on mount
+  // Check session on mount - allow some time for AuthCallback to establish session
   useEffect(() => {
     const checkSession = async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.user) {
-        navigate("/login");
+        // Check if we came from an invitation flow (allow AuthCallback to process)
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasInviteParams =
+          urlParams.get("token") ||
+          urlParams.get("token_hash") ||
+          window.location.hash.includes("token");
+
+        if (!hasInviteParams) {
+          // Only redirect to login if this isn't an invitation flow
+          navigate("/login");
+        }
       }
       setCheckingSession(false);
     };
-    checkSession();
+
+    // Add small delay to allow AuthCallback to process if redirected from there
+    const timer = setTimeout(checkSession, 100);
+    return () => clearTimeout(timer);
   }, [navigate]);
 
   const handleSubmit = async (e) => {

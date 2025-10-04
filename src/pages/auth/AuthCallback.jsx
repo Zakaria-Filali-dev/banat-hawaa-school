@@ -10,12 +10,6 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Debug logging
-        console.log("🔍 AuthCallback Debug Info:");
-        console.log("Current URL:", window.location.href);
-        console.log("Search params:", window.location.search);
-        console.log("Hash params:", window.location.hash);
-
         // Get URL parameters - check both search params and hash
         const urlParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(
@@ -31,13 +25,6 @@ export default function AuthCallback() {
         const errorDescription =
           urlParams.get("error_description") ||
           hashParams.get("error_description");
-
-        console.log("📋 Parsed Parameters:");
-        console.log("- token:", token);
-        console.log("- token_hash:", tokenHash);
-        console.log("- type:", type);
-        console.log("- error:", errorParam);
-        console.log("- errorDescription:", errorDescription);
 
         // If there's an error in the URL, show it immediately
         if (errorParam) {
@@ -72,37 +59,25 @@ export default function AuthCallback() {
         let verified = false;
         let lastError = null;
 
-        console.log(
-          "🔐 Attempting token verification with:",
-          verificationToken
-        );
-
         try {
           // First try: Use token as token_hash (most common for invites)
-          console.log("🔍 First attempt: Using token_hash");
           verificationResult = await supabase.auth.verifyOtp({
             token_hash: verificationToken,
             type: "invite",
           });
-          console.log("✅ First attempt successful");
           verified = true;
         } catch (firstError) {
-          console.log("❌ First attempt failed:", firstError.message);
           lastError = firstError;
           // Second try: Use token directly
           try {
-            console.log("🔍 Second attempt: Using token directly");
             verificationResult = await supabase.auth.verifyOtp({
               token: verificationToken,
               type: "invite",
             });
-            console.log("✅ Second attempt successful");
             verified = true;
           } catch (secondError) {
-            console.log("❌ Second attempt failed:", secondError.message);
             lastError = secondError;
             // Third try: Check if session is already established
-            console.log("🔍 Third attempt: Checking existing session");
             verificationResult = await supabase.auth.getSession();
           }
         }
