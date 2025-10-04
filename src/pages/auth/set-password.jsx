@@ -5,14 +5,13 @@ import "./set-password.css";
 
 export default function SetPassword() {
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState("");
+  const [capsLockOn, setCapsLockOn] = useState(false);
   const navigate = useNavigate();
 
   // Enhanced password strength calculation
@@ -61,8 +60,12 @@ export default function SetPassword() {
   };
 
   const passwordStrength = calculatePasswordStrength(password);
-  const passwordsMatch =
-    password === confirmPassword && confirmPassword.length > 0;
+
+  // Caps Lock detection function
+  const handleKeyPress = (e) => {
+    const capsLock = e.getModifierState && e.getModifierState("CapsLock");
+    setCapsLockOn(capsLock);
+  };
 
   // Check session on mount
   useEffect(() => {
@@ -83,14 +86,8 @@ export default function SetPassword() {
     setSuccess(false);
 
     // Validation
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
-
-    if (passwordStrength.score < 3) {
-      setError("Please choose a stronger password (at least Fair strength)");
+    if (passwordStrength.score < 4) {
+      setError("Please choose a stronger password (at least Good strength)");
       setLoading(false);
       return;
     }
@@ -159,6 +156,7 @@ export default function SetPassword() {
                 onChange={(e) => setPassword(e.target.value)}
                 onFocus={() => setFocusedField("password")}
                 onBlur={() => setFocusedField("")}
+                onKeyPress={handleKeyPress}
                 required
                 className={`password-input ${
                   focusedField === "password" ? "focused" : ""
@@ -198,6 +196,14 @@ export default function SetPassword() {
                 </svg>
               </button>
             </div>
+
+            {/* Caps Lock Warning */}
+            {capsLockOn && focusedField === "password" && (
+              <div className="caps-lock-warning">
+                <span className="warning-icon">⚠️</span>
+                <span className="warning-text">Caps Lock is ON</span>
+              </div>
+            )}
           </div>
 
           {/* Password Strength Analysis */}
@@ -320,80 +326,6 @@ export default function SetPassword() {
             </div>
           )}
 
-          {/* Confirm Password Input */}
-          <div className="input-group">
-            <label className="input-label">Confirm Password</label>
-            <div className="password-input-container">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm your new password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                onFocus={() => setFocusedField("confirmPassword")}
-                onBlur={() => setFocusedField("")}
-                required
-                className={`password-input ${
-                  focusedField === "confirmPassword" ? "focused" : ""
-                } ${confirmPassword && !passwordsMatch ? "error" : ""} ${
-                  confirmPassword && passwordsMatch ? "success" : ""
-                }`}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                className="visibility-toggle"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                aria-label={
-                  showConfirmPassword
-                    ? "Hide confirm password"
-                    : "Show confirm password"
-                }
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  {showConfirmPassword ? (
-                    <path
-                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  ) : (
-                    <path
-                      d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Password Match Indicator */}
-          {confirmPassword && (
-            <div
-              className={`match-indicator ${
-                passwordsMatch ? "match" : "no-match"
-              }`}
-            >
-              <div className="match-icon">{passwordsMatch ? "✅" : "❌"}</div>
-              <div className="match-text">
-                {passwordsMatch
-                  ? "Passwords match perfectly!"
-                  : "Passwords do not match"}
-              </div>
-            </div>
-          )}
-
           {/* Security Tips */}
           <div className="security-tips">
             <div className="tips-header">
@@ -411,21 +343,11 @@ export default function SetPassword() {
           <button
             type="submit"
             className={`submit-button ${
-              loading ||
-              !password ||
-              !confirmPassword ||
-              !passwordsMatch ||
-              passwordStrength.score < 4
+              loading || !password || passwordStrength.score < 4
                 ? "disabled"
                 : "enabled"
             }`}
-            disabled={
-              loading ||
-              !password ||
-              !confirmPassword ||
-              !passwordsMatch ||
-              passwordStrength.score < 4
-            }
+            disabled={loading || !password || passwordStrength.score < 4}
           >
             <span className="button-content">
               {loading ? (

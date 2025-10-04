@@ -57,6 +57,7 @@ export default function AuthCallback() {
         // Try different approaches for invite verification
         let verificationResult;
         let verified = false;
+        let lastError = null;
 
         try {
           // First try: Use token as token_hash (most common for invites)
@@ -65,7 +66,8 @@ export default function AuthCallback() {
             type: "invite",
           });
           verified = true;
-        } catch {
+        } catch (firstError) {
+          lastError = firstError;
           // Second try: Use token directly
           try {
             verificationResult = await supabase.auth.verifyOtp({
@@ -73,7 +75,8 @@ export default function AuthCallback() {
               type: "invite",
             });
             verified = true;
-          } catch {
+          } catch (secondError) {
+            lastError = secondError;
             // Third try: Check if session is already established
             verificationResult = await supabase.auth.getSession();
           }
@@ -88,7 +91,17 @@ export default function AuthCallback() {
             navigate("/auth/set-password");
             return;
           }
-          setError(`Invitation verification failed: ${error.message}`);
+          // Only show error if token is truly expired/invalid, not for other issues
+          if (
+            lastError?.message?.includes("expired") ||
+            lastError?.message?.includes("invalid")
+          ) {
+            setError(
+              `Invitation link has expired. Please request a new invitation.`
+            );
+          } else {
+            setError(`Invitation verification failed: ${error.message}`);
+          }
           setLoading(false);
           return;
         }
