@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../services/supabaseClient";
+import "./set-password.css";
 
 export default function SetPassword() {
   const [password, setPassword] = useState("");
