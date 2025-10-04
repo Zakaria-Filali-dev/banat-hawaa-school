@@ -179,7 +179,10 @@ export default function SetPassword() {
               <button
                 type="button"
                 className="visibility-toggle"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => {
+                  console.log("Toggle clicked, current state:", showPassword);
+                  setShowPassword(!showPassword);
+                }}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 <svg
