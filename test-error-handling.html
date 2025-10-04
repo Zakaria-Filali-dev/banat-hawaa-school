@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Handling Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .test-case {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Student Error Handling Test Cases</h1>
+
+    <div class="test-case info">
+        <h3>Test Scenario: Deleted Student Account</h3>
+        <p><strong>Steps to test:</strong></p>
+        <ol>
+            <li>Login as a student in one browser tab</li>
+            <li>In another tab, login as admin and delete the student account</li>
+            <li>Return to the student tab and refresh the page</li>
+            <li><strong>Expected:</strong> User should be redirected to landing page (/) instead of showing an error
+            </li>
+        </ol>
+    </div>
+
+    <div class="test-case info">
+        <h3>Test Scenario: Profile Fetch Error</h3>
+        <p><strong>Handled errors:</strong></p>
+        <ul>
+            <li>Profile not found (PGRST116 error)</li>
+            <li>Permission denied errors</li>
+            <li>Authentication token expired</li>
+            <li>Account suspension/deletion</li>
+        </ul>
+    </div>
+
+    <div class="test-case success">
+        <h3>Implemented Error Handling</h3>
+        <p><strong>Changes made:</strong></p>
+        <ul>
+            <li>✅ Added <code>handleAuthError</code> utility function</li>
+            <li>✅ Updated initial authentication check</li>
+            <li>✅ Enhanced profile fetch error handling</li>
+            <li>✅ Added real-time subscription for profile deletion</li>
+            <li>✅ Improved data fetching error handling</li>
+            <li>✅ All auth errors now redirect to landing page ("/") instead of showing error messages</li>
+        </ul>
+    </div>
+
+    <div class="test-case info">
+        <h3>Code Changes Summary</h3>
+        <p>The student dashboard now properly handles:</p>
+        <ul>
+            <li>User authentication failures</li>
+            <li>Deleted user accounts</li>
+            <li>Profile access errors</li>
+            <li>Real-time account deletion events</li>
+            <li>Data access permission errors</li>
+        </ul>
+        <p>All these scenarios will now redirect the user to the landing page with proper session cleanup.</p>
+    </div>
+</body>
+
+</html>

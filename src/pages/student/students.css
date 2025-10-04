@@ -2516,16 +2516,70 @@ html {
 .graded-solution-section, .original-submission-section {
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background: rgba(107, 114, 128, 0.05);
-    border: 1px solid rgba(107, 114, 128, 0.2);
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
 }
 
+.submission-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.submission-icon {
+    font-size: 1.3rem;
+}
+
 .graded-solution-section h4, .original-submission-section h4 {
-    margin: 0 0 1rem 0;
-    color: #374151;
+    margin: 0;
+    color: #475569;
     font-size: 1.1rem;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.submission-text {
+    margin-bottom: 1.5rem;
+}
+
+.submission-text h5 {
+    margin: 0 0 0.75rem 0;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.text-content {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    color: #374151;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+.submitted-files h5 {
+    margin: 0 0 1rem 0;
+    color: #64748b;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.files-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.no-submission {
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+    padding: 2rem;
 }
 
 .solution-files, .submitted-files {
