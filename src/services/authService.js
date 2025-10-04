@@ -54,10 +54,15 @@ class AuthService {
      * Debounced state update to prevent excessive re-renders
      */
     updateState(newState, immediate = false) {
+        console.log('[AuthService] updateState called with:', newState);
         clearTimeout(this.stateUpdateTimeout);
 
         const update = () => {
+            console.log('[AuthService] Executing state update');
+            const oldState = { ...this.authState };
             this.authState = { ...this.authState, ...newState };
+            console.log('[AuthService] State changed from:', { user: !!oldState.user, profile: !!oldState.profile, loading: oldState.loading });
+            console.log('[AuthService] State changed to:', { user: !!this.authState.user, profile: !!this.authState.profile, loading: this.authState.loading });
             this.notifySubscribers();
         };
 
@@ -188,16 +193,22 @@ class AuthService {
      * Handle sign in with profile verification
      */
     async handleSignIn(session) {
+        console.log('[AuthService] handleSignIn called with session:', !!session?.user);
         if (session?.user) {
+            console.log('[AuthService] Verifying profile for user:', session.user.id);
             const profile = await this.verifyProfile(session.user.id);
+            console.log('[AuthService] Profile verification result:', !!profile, profile?.role);
             if (profile) {
+                console.log('[AuthService] Updating state with authenticated user');
                 this.updateState({
                     user: session.user,
                     profile,
                     loading: false,
                     error: null
                 });
+                console.log('[AuthService] State updated successfully');
             } else {
+                console.log('[AuthService] No profile found, signing out');
                 await supabase.auth.signOut();
                 this.updateState({
                     user: null,
@@ -257,6 +268,7 @@ class AuthService {
      * Verify user profile exists and is valid
      */
     async verifyProfile(userId) {
+        console.log('[AuthService] verifyProfile called for userId:', userId);
         try {
             const { data: profile, error } = await supabase
                 .from('profiles')
@@ -264,14 +276,18 @@ class AuthService {
                 .eq('id', userId)
                 .single();
 
+            console.log('[AuthService] Profile query result:', { profile: !!profile, error: !!error, errorCode: error?.code });
+
             if (error) {
                 if (error.code === 'PGRST116') {
                     console.log('[AuthService] Profile not found - account deleted');
                     return null;
                 }
+                console.error('[AuthService] Profile query error:', error);
                 throw error;
             }
 
+            console.log('[AuthService] Profile found:', { id: profile.id, role: profile.role });
             return profile;
         } catch (error) {
             console.error('[AuthService] Profile verification error:', error);
