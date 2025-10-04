@@ -1,91 +1,68 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
-import { useAuth } from "../services/authService";
 
 export default function Login() {
-  console.log("🎯 LOGIN COMPONENT LOADED");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, profile, loading: authLoading } = useAuth();
-
-  // Enterprise-grade redirect handling
-  useEffect(() => {
-    console.log("🔍 Auth state check:", {
-      user: !!user,
-      profile: !!profile,
-      authLoading,
-    });
-
-    // Only redirect if auth is fully loaded and user is authenticated
-    if (!authLoading && user && profile) {
-      console.log(
-        "✅ User authenticated, redirecting based on role:",
-        profile.role
-      );
-      setLoading(false); // Clear login loading state
-
-      const redirectPath = {
-        admin: "/admin",
-        teacher: "/teacher",
-        student: "/student",
-      }[profile.role];
-
-      if (redirectPath) {
-        console.log(`🚀 Redirecting to ${redirectPath}`);
-        navigate(redirectPath, { replace: true });
-      } else {
-        console.error("❌ Invalid role:", profile.role);
-        setErrorMsg(`Invalid user role: ${profile.role}`);
-        setLoading(false);
-      }
-    }
-  }, [user, profile, authLoading, navigate]);
 
   const handleLogin = async (e) => {
-    console.log("🚀 ENTERPRISE LOGIN - Starting authentication");
     e.preventDefault();
     setErrorMsg("");
     setLoading(true);
 
     try {
-      console.log("� Calling Supabase authentication...");
-
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email,
         password,
       });
 
-      console.log("📡 Auth response:", {
-        success: !error,
-        hasUser: !!data?.user,
-      });
-
       if (error) {
-        console.log("❌ Authentication failed:", error.message);
         setErrorMsg(error.message);
         setLoading(false);
         return;
       }
 
       if (!data?.user) {
-        console.log("❌ No user data returned");
-        setErrorMsg("Authentication failed. Please try again.");
+        setErrorMsg("Login failed. Please try again.");
         setLoading(false);
         return;
       }
 
-      console.log(
-        "✅ Authentication successful - waiting for auth service to process..."
-      );
-      // Don't set loading to false here - let useEffect handle redirect
-      // The AuthService will update state and trigger the useEffect redirect
+      // Fetch user role for redirect
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profileError) {
+        setErrorMsg("Profile lookup failed. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Redirect based on role
+      switch (profile.role) {
+        case "admin":
+          navigate("/admin");
+          break;
+        case "teacher":
+          navigate("/teacher");
+          break;
+        case "student":
+          navigate("/student");
+          break;
+        default:
+          setErrorMsg("Invalid user role. Please contact support.");
+          setLoading(false);
+      }
     } catch (error) {
-      console.error("💥 Unexpected login error:", error);
-      setErrorMsg("Unexpected error occurred. Please try again.");
+      console.error("Login error:", error);
+      setErrorMsg("Unexpected error. Please try again.");
       setLoading(false);
     }
   };

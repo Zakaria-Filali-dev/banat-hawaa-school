@@ -325,16 +325,12 @@ const ImageViewer = ({ images, initialIndex = 0, onClose }) => {
               console.error("Failed to load image:", imageUrl);
               setLoading(false);
               e.target.style.display = "none";
-              // Show error message - XSS Safe
+              // Show error message
               const errorDiv = document.createElement("div");
-              errorDiv.textContent = "Failed to load image"; // Safe text content
+              errorDiv.innerHTML = "Failed to load image";
               errorDiv.style.cssText =
                 "display: flex; align-items: center; justify-content: center; height: 400px; color: white; font-size: 1.2rem;";
-              try {
-                e.target.parentNode.appendChild(errorDiv);
-              } catch (appendError) {
-                console.error("Failed to append error message:", appendError);
-              }
+              e.target.parentNode.appendChild(errorDiv);
             }}
             draggable={false}
           />
