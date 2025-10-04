@@ -25,17 +25,36 @@ export default function SetPassword() {
     };
 
     score = Object.values(checks).filter(Boolean).length;
-    
+
     return {
       score,
       checks,
-      strength: score <= 1 ? 'Very Weak' : score <= 2 ? 'Weak' : score <= 3 ? 'Fair' : score <= 4 ? 'Good' : 'Excellent',
-      color: score <= 1 ? '#ff4757' : score <= 2 ? '#ff7675' : score <= 3 ? '#fdcb6e' : score <= 4 ? '#00b894' : '#00cec9'
+      strength:
+        score <= 1
+          ? "Very Weak"
+          : score <= 2
+          ? "Weak"
+          : score <= 3
+          ? "Fair"
+          : score <= 4
+          ? "Good"
+          : "Excellent",
+      color:
+        score <= 1
+          ? "#ff4757"
+          : score <= 2
+          ? "#ff7675"
+          : score <= 3
+          ? "#fdcb6e"
+          : score <= 4
+          ? "#00b894"
+          : "#00cec9",
     };
   };
 
   const passwordStrength = calculatePasswordStrength(password);
-  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+  const passwordsMatch =
+    password === confirmPassword && confirmPassword.length > 0;
 
   // Check session on mount
   useEffect(() => {
@@ -84,31 +103,37 @@ export default function SetPassword() {
 
   if (checkingSession) {
     return (
-      <div style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "Arial, sans-serif"
-      }}>
-        <div style={{
-          background: "rgba(255, 255, 255, 0.1)",
-          backdropFilter: "blur(10px)",
-          borderRadius: "20px",
-          padding: "40px",
-          textAlign: "center",
-          color: "white"
-        }}>
-          <div style={{
-            width: "40px",
-            height: "40px",
-            border: "4px solid rgba(255,255,255,0.3)",
-            borderTop: "4px solid white",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-            margin: "0 auto 20px"
-          }}></div>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "Arial, sans-serif",
+        }}
+      >
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(10px)",
+            borderRadius: "20px",
+            padding: "40px",
+            textAlign: "center",
+            color: "white",
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "4px solid rgba(255,255,255,0.3)",
+              borderTop: "4px solid white",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              margin: "0 auto 20px",
+            }}
+          ></div>
           <h2>Verifying Session...</h2>
         </div>
       </div>
@@ -116,15 +141,17 @@ export default function SetPassword() {
   }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "Arial, sans-serif",
-      padding: "20px"
-    }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "Arial, sans-serif",
+        padding: "20px",
+      }}
+    >
       <style>
         {`
           @keyframes spin {
@@ -242,20 +269,30 @@ export default function SetPassword() {
         `}
       </style>
 
-      <div style={{
-        background: "rgba(255, 255, 255, 0.1)",
-        backdropFilter: "blur(10px)",
-        borderRadius: "20px",
-        padding: "40px",
-        width: "100%",
-        maxWidth: "450px",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)"
-      }}>
+      <div
+        style={{
+          background: "rgba(255, 255, 255, 0.1)",
+          backdropFilter: "blur(10px)",
+          borderRadius: "20px",
+          padding: "40px",
+          width: "100%",
+          maxWidth: "450px",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+        }}
+      >
         <div style={{ textAlign: "center", marginBottom: "30px" }}>
-          <h1 style={{ color: "white", fontSize: "28px", marginBottom: "10px" }}>
+          <h1
+            style={{ color: "white", fontSize: "28px", marginBottom: "10px" }}
+          >
             Set Your Password
           </h1>
-          <p style={{ color: "rgba(255, 255, 255, 0.8)", fontSize: "16px", margin: 0 }}>
+          <p
+            style={{
+              color: "rgba(255, 255, 255, 0.8)",
+              fontSize: "16px",
+              margin: 0,
+            }}
+          >
             Create a secure password for your account
           </p>
         </div>
@@ -283,29 +320,38 @@ export default function SetPassword() {
           {/* Password Strength Meter */}
           {password && (
             <div>
-              <div style={{ 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center",
-                marginBottom: "5px"
-              }}>
-                <span style={{ color: "rgba(255, 255, 255, 0.8)", fontSize: "14px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: "5px",
+                }}
+              >
+                <span
+                  style={{
+                    color: "rgba(255, 255, 255, 0.8)",
+                    fontSize: "14px",
+                  }}
+                >
                   Password Strength:
                 </span>
-                <span style={{ 
-                  color: passwordStrength.color, 
-                  fontSize: "14px", 
-                  fontWeight: "bold" 
-                }}>
+                <span
+                  style={{
+                    color: passwordStrength.color,
+                    fontSize: "14px",
+                    fontWeight: "bold",
+                  }}
+                >
                   {passwordStrength.strength}
                 </span>
               </div>
               <div className="strength-meter">
-                <div 
+                <div
                   className="strength-fill"
                   style={{
                     width: `${(passwordStrength.score / 5) * 100}%`,
-                    background: passwordStrength.color
+                    background: passwordStrength.color,
                   }}
                 />
               </div>
@@ -313,45 +359,65 @@ export default function SetPassword() {
               {/* Requirements Grid */}
               <div className="requirements-grid">
                 <div className="requirement">
-                  <span 
+                  <span
                     className="requirement-icon"
-                    style={{ color: passwordStrength.checks.length ? "#00b894" : "#ff7675" }}
+                    style={{
+                      color: passwordStrength.checks.length
+                        ? "#00b894"
+                        : "#ff7675",
+                    }}
                   >
                     {passwordStrength.checks.length ? "✓" : "✗"}
                   </span>
                   8+ characters
                 </div>
                 <div className="requirement">
-                  <span 
+                  <span
                     className="requirement-icon"
-                    style={{ color: passwordStrength.checks.uppercase ? "#00b894" : "#ff7675" }}
+                    style={{
+                      color: passwordStrength.checks.uppercase
+                        ? "#00b894"
+                        : "#ff7675",
+                    }}
                   >
                     {passwordStrength.checks.uppercase ? "✓" : "✗"}
                   </span>
                   Uppercase letter
                 </div>
                 <div className="requirement">
-                  <span 
+                  <span
                     className="requirement-icon"
-                    style={{ color: passwordStrength.checks.lowercase ? "#00b894" : "#ff7675" }}
+                    style={{
+                      color: passwordStrength.checks.lowercase
+                        ? "#00b894"
+                        : "#ff7675",
+                    }}
                   >
                     {passwordStrength.checks.lowercase ? "✓" : "✗"}
                   </span>
                   Lowercase letter
                 </div>
                 <div className="requirement">
-                  <span 
+                  <span
                     className="requirement-icon"
-                    style={{ color: passwordStrength.checks.numbers ? "#00b894" : "#ff7675" }}
+                    style={{
+                      color: passwordStrength.checks.numbers
+                        ? "#00b894"
+                        : "#ff7675",
+                    }}
                   >
                     {passwordStrength.checks.numbers ? "✓" : "✗"}
                   </span>
                   Number
                 </div>
                 <div className="requirement" style={{ gridColumn: "span 2" }}>
-                  <span 
+                  <span
                     className="requirement-icon"
-                    style={{ color: passwordStrength.checks.symbols ? "#00b894" : "#ff7675" }}
+                    style={{
+                      color: passwordStrength.checks.symbols
+                        ? "#00b894"
+                        : "#ff7675",
+                    }}
                   >
                     {passwordStrength.checks.symbols ? "✓" : "✗"}
                   </span>
@@ -371,8 +437,10 @@ export default function SetPassword() {
               required
               className="password-input"
               style={{
-                borderColor: confirmPassword && !passwordsMatch ? 
-                  "rgba(255, 71, 87, 0.5)" : "rgba(255, 255, 255, 0.3)"
+                borderColor:
+                  confirmPassword && !passwordsMatch
+                    ? "rgba(255, 71, 87, 0.5)"
+                    : "rgba(255, 255, 255, 0.3)",
               }}
             />
             <button
@@ -386,17 +454,19 @@ export default function SetPassword() {
 
           {/* Password Match Indicator */}
           {confirmPassword && (
-            <div style={{ 
-              display: "flex", 
-              alignItems: "center", 
-              marginBottom: "15px",
-              fontSize: "14px"
-            }}>
-              <span 
-                style={{ 
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: "15px",
+                fontSize: "14px",
+              }}
+            >
+              <span
+                style={{
                   color: passwordsMatch ? "#00b894" : "#ff7675",
                   marginRight: "6px",
-                  fontWeight: "bold"
+                  fontWeight: "bold",
                 }}
               >
                 {passwordsMatch ? "✓" : "✗"}
@@ -411,18 +481,20 @@ export default function SetPassword() {
           <button
             type="submit"
             className="submit-button"
-            disabled={loading || !password || !confirmPassword || !passwordsMatch || passwordStrength.score < 3}
+            disabled={
+              loading ||
+              !password ||
+              !confirmPassword ||
+              !passwordsMatch ||
+              passwordStrength.score < 3
+            }
           >
             {loading ? "Setting Password..." : "Set Password"}
           </button>
         </form>
 
         {/* Error Message */}
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
+        {error && <div className="error-message">{error}</div>}
 
         {/* Success Message */}
         {success && (

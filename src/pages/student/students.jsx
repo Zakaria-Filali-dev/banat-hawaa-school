@@ -643,23 +643,26 @@ export default function Students() {
 
               {selectedGradedSubmission.score != null && (
                 <div className="grade-section">
-                  <h4>🎯 Your Score</h4>
+                  <div className="score-header">
+                    <div className="score-icon">🎯</div>
+                    <h4>YOUR SCORE</h4>
+                  </div>
                   <div className="grade-display">
                     <div className="grade-score">
                       <span className="score-number">
                         {selectedGradedSubmission.score}
                       </span>
-                      {selectedGradedSubmission.assignments?.points && (
+                      {(selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points) && (
                         <span className="score-total">
-                          / {selectedGradedSubmission.assignments.points}
+                          / {selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points}
                         </span>
                       )}
                     </div>
-                    {selectedGradedSubmission.assignments?.points && (
+                    {(selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points) && (
                       <div className="grade-percentage">
                         {Math.round(
                           (selectedGradedSubmission.score /
-                            selectedGradedSubmission.assignments.points) *
+                            (selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points)) *
                             100
                         )}
                         %
@@ -667,12 +670,9 @@ export default function Students() {
                     )}
                     <div className="grade-status">
                       {(() => {
-                        if (!selectedGradedSubmission.assignments?.points)
-                          return "Graded";
-                        const percentage =
-                          (selectedGradedSubmission.score /
-                            selectedGradedSubmission.assignments.points) *
-                          100;
+                        const totalPoints = selectedGradedSubmission.assignments?.points || selectedGradedSubmission.assignment?.points;
+                        if (!totalPoints) return "✅ Graded";
+                        const percentage = (selectedGradedSubmission.score / totalPoints) * 100;
                         if (percentage >= 90) return "🌟 Excellent!";
                         if (percentage >= 80) return "🎉 Great job!";
                         if (percentage >= 70) return "👍 Good work!";
@@ -686,9 +686,14 @@ export default function Students() {
 
               {selectedGradedSubmission.feedback && (
                 <div className="feedback-section">
-                  <h4>💬 Teacher Feedback</h4>
+                  <div className="feedback-header">
+                    <div className="feedback-icon">💬</div>
+                    <h4>Teacher Feedback</h4>
+                  </div>
                   <div className="feedback-content">
-                    {selectedGradedSubmission.feedback}
+                    <div className="feedback-bubble">
+                      {selectedGradedSubmission.feedback}
+                    </div>
                   </div>
                 </div>
               )}
