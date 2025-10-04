@@ -18,20 +18,34 @@ export default function Login() {
     console.log("🔄 Login state set, calling Supabase auth...");
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      console.log("📡 Supabase auth response:", {
+      console.log("🔐 About to call signInWithPassword...");
+      let authResponse;
+      try {
+        authResponse = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        console.log("📡 Raw Supabase response:", authResponse);
+      } catch (authError) {
+        console.error("💥 Supabase auth call failed:", authError);
+        throw authError;
+      }
+
+      const { data, error } = authResponse;
+      console.log("📡 Extracted data and error:", {
         data: !!data,
         error: !!error,
+        hasUser: !!data?.user,
       });
 
       if (error) {
+        console.log("❌ Auth error occurred:", error);
         setErrorMsg(error.message);
         setLoading(false);
         return;
       }
+
+      console.log("✅ No auth error, checking user data...");
 
       if (!data?.user) {
         setErrorMsg("Login failed. Please try again.");
