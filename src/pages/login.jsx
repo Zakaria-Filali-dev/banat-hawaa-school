@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
 
 export default function Login() {
+  console.log("🎯 LOGIN COMPONENT LOADED");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -10,14 +11,20 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
+    console.log("🚀 HANDLELOGIN CALLED - Starting login process");
     e.preventDefault();
     setErrorMsg("");
     setLoading(true);
+    console.log("🔄 Login state set, calling Supabase auth...");
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
+      });
+      console.log("📡 Supabase auth response:", {
+        data: !!data,
+        error: !!error,
       });
 
       if (error) {
