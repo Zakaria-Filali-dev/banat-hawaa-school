@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../services/authService";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -8,6 +9,27 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, profile, loading: authLoading } = useAuth();
+
+  // Redirect user if already authenticated
+  useEffect(() => {
+    if (!authLoading && user && profile) {
+      switch (profile.role) {
+        case "admin":
+          navigate("/admin", { replace: true });
+          break;
+        case "teacher":
+          navigate("/teacher", { replace: true });
+          break;
+        case "student":
+          navigate("/student", { replace: true });
+          break;
+        default:
+          // Stay on login page for invalid roles
+          break;
+      }
+    }
+  }, [user, profile, authLoading, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,34 +54,9 @@ export default function Login() {
         return;
       }
 
-      // Fetch user role for redirect
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", data.user.id)
-        .single();
-
-      if (profileError) {
-        setErrorMsg("Profile lookup failed. Please try again.");
-        setLoading(false);
-        return;
-      }
-
-      // Redirect based on role
-      switch (profile.role) {
-        case "admin":
-          navigate("/admin");
-          break;
-        case "teacher":
-          navigate("/teacher");
-          break;
-        case "student":
-          navigate("/student");
-          break;
-        default:
-          setErrorMsg("Invalid user role. Please contact support.");
-          setLoading(false);
-      }
+      // Don't manually navigate - let the useEffect handle it
+      // The auth service will update the state and trigger the redirect
+      setLoading(false);
     } catch (error) {
       console.error("Login error:", error);
       setErrorMsg("Unexpected error. Please try again.");

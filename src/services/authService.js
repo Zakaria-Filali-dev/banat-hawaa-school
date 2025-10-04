@@ -194,6 +194,7 @@ class AuthService {
                 this.updateState({
                     user: session.user,
                     profile,
+                    loading: false,
                     error: null
                 });
             } else {
@@ -201,6 +202,7 @@ class AuthService {
                 this.updateState({
                     user: null,
                     profile: null,
+                    loading: false,
                     error: 'Account has been removed by administrator'
                 });
             }
@@ -214,6 +216,7 @@ class AuthService {
         this.updateState({
             user: null,
             profile: null,
+            loading: false,
             error: null
         });
     }
