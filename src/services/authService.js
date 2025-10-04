@@ -1,14 +1,8 @@
 import { supabase } from './supabaseClient';
+import { useState, useEffect } from 'react';
 
 /**
- * Enhanced Authentication Service with Race Condition Protection
- * 
- * Handles authentication state management with:
- * - Debounced state updates
- * - Race condition prevention
- * - Optimistic updates with rollback
- * - Concurrent operation queuing
- * - Session integrity verification
+ * Simple and Reliable Authentication Service
  */
 class AuthService {
     constructor() {
@@ -21,17 +15,9 @@ class AuthService {
         };
 
         this.subscribers = new Set();
-        this.pendingOperations = new Map();
-        this.operationQueue = [];
-        this.isProcessingQueue = false;
-        this.stateUpdateTimeout = null;
-        this.sessionCheckInterval = null;
 
         // Initialize auth listener
         this.initializeAuthListener();
-
-        // Periodic session verification
-        this.startSessionMonitoring();
     }
 
     /**
@@ -51,58 +37,42 @@ class AuthService {
     }
 
     /**
-     * Debounced state update to prevent excessive re-renders
+     * Get current auth state
      */
-    updateState(newState, immediate = false) {
-        console.log('[AuthService] updateState called with:', newState);
-        clearTimeout(this.stateUpdateTimeout);
+    getState() {
+        return { ...this.authState };
+    }
 
-        const update = () => {
-            console.log('[AuthService] Executing state update');
-            const oldState = { ...this.authState };
-            this.authState = { ...this.authState, ...newState };
-            console.log('[AuthService] State changed from:', { user: !!oldState.user, profile: !!oldState.profile, loading: oldState.loading });
-            console.log('[AuthService] State changed to:', { user: !!this.authState.user, profile: !!this.authState.profile, loading: this.authState.loading });
-            this.notifySubscribers();
-        };
-
-        if (immediate) {
-            update();
-        } else {
-            this.stateUpdateTimeout = setTimeout(update, 50);
-        }
+    /**
+     * Update auth state immediately
+     */
+    updateState(updates) {
+        console.log('[AuthService] Updating state:', updates);
+        this.authState = { ...this.authState, ...updates };
+        this.notifySubscribers();
     }
 
     /**
      * Notify all subscribers of state changes
      */
     notifySubscribers() {
-        const state = { ...this.authState };
         this.subscribers.forEach(callback => {
             try {
-                callback(state);
+                callback(this.authState);
             } catch (error) {
-                console.error('Auth subscriber error:', error);
+                console.error('[AuthService] Error notifying subscriber:', error);
             }
         });
     }
 
     /**
-     * Initialize authentication listener with race condition protection
+     * Initialize Supabase auth listener
      */
     initializeAuthListener() {
-        let lastEventTime = 0;
+        console.log('[AuthService] Initializing auth listener...');
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                const eventTime = Date.now();
-
-                // Prevent duplicate events within 100ms
-                if (eventTime - lastEventTime < 100) {
-                    return;
-                }
-                lastEventTime = eventTime;
-
                 console.log(`[AuthService] Auth event: ${event}`, { sessionExists: !!session });
 
                 try {
@@ -111,7 +81,8 @@ class AuthService {
                     console.error('[AuthService] Error handling auth event:', error);
                     this.updateState({
                         error: 'Authentication error occurred',
-                        loading: false
+                        loading: false,
+                        initialized: true
                     });
                 }
             }
@@ -124,7 +95,7 @@ class AuthService {
     }
 
     /**
-     * Handle authentication events with proper error handling
+     * Handle authentication events
      */
     async handleAuthEvent(event, session) {
         switch (event) {
@@ -144,62 +115,18 @@ class AuthService {
                 await this.handleTokenRefresh(session);
                 break;
 
-            case 'USER_UPDATED':
-                await this.handleUserUpdate(session);
-                break;
-
             default:
                 console.log(`[AuthService] Unhandled auth event: ${event}`);
         }
     }
 
     /**
-     * Handle initial session with race condition protection
+     * Handle initial session
      */
     async handleInitialSession(session) {
         console.log('[AuthService] handleInitialSession called with session:', !!session?.user);
         if (session?.user) {
-            console.log('[AuthService] Verifying profile for initial session:', session.user.id);
-
-            try {
-                const { data: profile, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', session.user.id)
-                    .single();
-
-                console.log('[AuthService] Initial session profile query result:', { profile: !!profile, error: !!error });
-
-                if (error || !profile) {
-                    console.log('[AuthService] Profile verification failed for initial session');
-                    await supabase.auth.signOut();
-                    this.updateState({
-                        user: null,
-                        profile: null,
-                        loading: false,
-                        error: 'Account verification failed',
-                        initialized: true
-                    });
-                } else {
-                    console.log('[AuthService] Initial session profile found:', { role: profile.role });
-                    this.updateState({
-                        user: session.user,
-                        profile,
-                        loading: false,
-                        error: null,
-                        initialized: true
-                    });
-                }
-            } catch (error) {
-                console.error('[AuthService] Initial session verification error:', error);
-                this.updateState({
-                    user: null,
-                    profile: null,
-                    loading: false,
-                    error: 'Session verification failed',
-                    initialized: true
-                });
-            }
+            await this.loadUserProfile(session.user);
         } else {
             console.log('[AuthService] No initial session found');
             this.updateState({
@@ -213,50 +140,12 @@ class AuthService {
     }
 
     /**
-     * Handle sign in with profile verification
+     * Handle sign in
      */
     async handleSignIn(session) {
         console.log('[AuthService] handleSignIn called with session:', !!session?.user);
         if (session?.user) {
-            console.log('[AuthService] Verifying profile for user:', session.user.id);
-
-            try {
-                // Use authenticated supabase client with the session
-                const { data: profile, error } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', session.user.id)
-                    .single();
-
-                console.log('[AuthService] Profile query result:', { profile: !!profile, error: !!error });
-
-                if (error) {
-                    console.error('[AuthService] Profile query error:', error);
-                    throw error;
-                }
-
-                if (profile) {
-                    console.log('[AuthService] Profile found:', { role: profile.role });
-                    this.updateState({
-                        user: session.user,
-                        profile,
-                        loading: false,
-                        error: null
-                    });
-                } else {
-                    console.log('[AuthService] No profile found');
-                    throw new Error('Profile not found');
-                }
-            } catch (error) {
-                console.error('[AuthService] Profile verification failed:', error);
-                await supabase.auth.signOut();
-                this.updateState({
-                    user: null,
-                    profile: null,
-                    loading: false,
-                    error: 'Profile verification failed. Please contact support.'
-                });
-            }
+            await this.loadUserProfile(session.user);
         }
     }
 
@@ -264,23 +153,26 @@ class AuthService {
      * Handle sign out
      */
     handleSignOut() {
+        console.log('[AuthService] handleSignOut called');
         this.updateState({
             user: null,
             profile: null,
             loading: false,
-            error: null
+            error: null,
+            initialized: true
         });
     }
 
     /**
-     * Handle token refresh with session validation
+     * Handle token refresh
      */
     async handleTokenRefresh(session) {
         console.log('[AuthService] handleTokenRefresh called with session:', !!session?.user);
         if (session?.user) {
-            // Don't verify profile on token refresh - just continue with current state
-            console.log('[AuthService] Token refreshed successfully, maintaining current state');
-            // Profile verification not needed for token refresh
+            // Just update the user, keep existing profile
+            this.updateState({
+                user: session.user
+            });
         } else {
             // Token refresh failed - sign out
             console.log('[AuthService] Token refresh failed, signing out');
@@ -289,265 +181,150 @@ class AuthService {
     }
 
     /**
-     * Handle user update
+     * Load user profile from database
      */
-    async handleUserUpdate(session) {
-        if (session?.user && this.authState.user) {
-            this.updateState({
-                user: session.user
-            });
-        }
-    }
-
-    /**
-     * Verify user profile exists and is valid
-     */
-    async verifyProfile(userId) {
-        console.log('[AuthService] verifyProfile called for userId:', userId);
+    async loadUserProfile(user) {
+        console.log('[AuthService] Loading profile for user:', user.id);
 
         try {
-            // Add timeout to prevent hanging queries
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Profile query timeout')), 10000);
-            });
-
-            const queryPromise = supabase
+            const { data: profile, error } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', userId)
+                .eq('id', user.id)
                 .single();
 
-            console.log('[AuthService] Executing profile query with timeout...');
-            const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]);
-
-            console.log('[AuthService] Profile query result:', {
-                profile: !!profile,
-                error: !!error,
-                errorCode: error?.code,
-                errorMessage: error?.message
-            });
+            console.log('[AuthService] Profile query result:', { profile: !!profile, error: !!error });
 
             if (error) {
-                if (error.code === 'PGRST116') {
-                    console.log('[AuthService] Profile not found - account deleted');
-                    return null;
-                }
                 console.error('[AuthService] Profile query error:', error);
                 throw error;
             }
 
-            if (!profile) {
-                console.log('[AuthService] No profile data returned');
-                return null;
+            if (profile) {
+                console.log('[AuthService] Profile found:', { role: profile.role });
+                this.updateState({
+                    user,
+                    profile,
+                    loading: false,
+                    error: null,
+                    initialized: true
+                });
+            } else {
+                console.log('[AuthService] No profile found');
+                throw new Error('Profile not found');
             }
-
-            console.log('[AuthService] Profile found:', { id: profile.id, role: profile.role });
-            return profile;
         } catch (error) {
-            console.error('[AuthService] Profile verification error:', error);
-
-            // If it's a timeout, try creating a basic profile
-            if (error.message === 'Profile query timeout') {
-                console.log('[AuthService] Query timeout - attempting profile creation fallback');
-                try {
-                    console.log('[AuthService] Attempting to create profile in database...');
-                    const { data: newProfile, error: createError } = await supabase
-                        .from('profiles')
-                        .insert([{ id: userId, role: 'admin' }]) // Set as admin for now
-                        .select()
-                        .single();
-
-                    console.log('[AuthService] Profile creation result:', {
-                        success: !createError,
-                        profile: !!newProfile,
-                        error: createError?.message
-                    });
-
-                    if (!createError && newProfile) {
-                        console.log('[AuthService] Created fallback profile successfully:', newProfile);
-                        return newProfile;
-                    } else {
-                        console.log('[AuthService] DB profile creation failed, using memory-only profile');
-                        // Return a temporary profile that exists only in memory
-                        const tempProfile = {
-                            id: userId,
-                            role: 'admin',
-                            temp: true
-                        };
-                        console.log('[AuthService] Using temporary profile:', tempProfile);
-                        return tempProfile;
-                    }
-                } catch (createErr) {
-                    console.error('[AuthService] Fallback profile creation failed:', createErr);
-                    console.log('[AuthService] Using emergency temporary profile');
-                    // Emergency fallback - temporary profile
-                    return {
-                        id: userId,
-                        role: 'admin',
-                        temp: true,
-                        emergency: true
-                    };
-                }
-            }
-
-            return null;
-        }
-    }
-
-    /**
-     * Perform initial authentication check
-     */
-    async performInitialCheck() {
-        try {
-            const { data: { session }, error } = await supabase.auth.getSession();
-
-            if (error) {
-                throw error;
-            }
-
-            await this.handleInitialSession(session);
-        } catch (error) {
-            console.error('[AuthService] Initial check error:', error);
+            console.error('[AuthService] Profile loading failed:', error);
+            await supabase.auth.signOut();
             this.updateState({
+                user: null,
+                profile: null,
                 loading: false,
-                error: 'Failed to initialize authentication',
+                error: 'Profile verification failed. Please contact support.',
                 initialized: true
             });
         }
     }
 
     /**
-     * Start periodic session monitoring
+     * Perform initial session check
      */
-    startSessionMonitoring() {
-        // Check session validity every 5 minutes
-        this.sessionCheckInterval = setInterval(async () => {
-            if (this.authState.user) {
-                try {
-                    const { data: { session } } = await supabase.auth.getSession();
+    async performInitialCheck() {
+        console.log('[AuthService] Performing initial session check...');
 
-                    if (!session) {
-                        console.log('[AuthService] Session expired during monitoring');
-                        this.handleSignOut();
-                    } else {
-                        // Verify profile still exists
-                        const profile = await this.verifyProfile(session.user.id);
-                        if (!profile) {
-                            console.log('[AuthService] Profile deleted during monitoring');
-                            await supabase.auth.signOut();
-                        }
-                    }
-                } catch (error) {
-                    console.error('[AuthService] Session monitoring error:', error);
-                }
-            }
-        }, 5 * 60 * 1000); // 5 minutes
-    }
+        try {
+            const { data: { session }, error } = await supabase.auth.getSession();
 
-    /**
-     * Queue an operation to prevent race conditions
-     */
-    async queueOperation(operationId, operation) {
-        return new Promise((resolve, reject) => {
-            // Check if operation is already pending
-            if (this.pendingOperations.has(operationId)) {
-                return this.pendingOperations.get(operationId);
+            if (error) {
+                console.error('[AuthService] Error getting session:', error);
+                this.updateState({
+                    user: null,
+                    profile: null,
+                    loading: false,
+                    error: 'Session check failed',
+                    initialized: true
+                });
+                return;
             }
 
-            const operationPromise = {
-                id: operationId,
-                operation,
-                resolve,
-                reject,
-                timestamp: Date.now()
-            };
+            console.log('[AuthService] Initial session check result:', { sessionExists: !!session });
 
-            this.operationQueue.push(operationPromise);
-            this.pendingOperations.set(operationId, operationPromise);
-
-            this.processQueue();
-        });
-    }
-
-    /**
-     * Process operation queue sequentially
-     */
-    async processQueue() {
-        if (this.isProcessingQueue || this.operationQueue.length === 0) {
-            return;
+            if (session?.user) {
+                await this.loadUserProfile(session.user);
+            } else {
+                this.updateState({
+                    user: null,
+                    profile: null,
+                    loading: false,
+                    error: null,
+                    initialized: true
+                });
+            }
+        } catch (error) {
+            console.error('[AuthService] Initial check failed:', error);
+            this.updateState({
+                user: null,
+                profile: null,
+                loading: false,
+                error: 'Authentication check failed',
+                initialized: true
+            });
         }
-
-        this.isProcessingQueue = true;
-
-        while (this.operationQueue.length > 0) {
-            const { id, operation, resolve, reject } = this.operationQueue.shift();
-
-            try {
-                const result = await operation();
-                this.pendingOperations.delete(id);
-                resolve(result);
-            } catch (error) {
-                this.pendingOperations.delete(id);
-                reject(error);
-            }
-        }
-
-        this.isProcessingQueue = false;
     }
 
     /**
-     * Get current auth state
-     */
-    getState() {
-        return { ...this.authState };
-    }
-
-    /**
-     * Sign out with cleanup
+     * Sign out user
      */
     async signOut() {
-        return this.queueOperation('signOut', async () => {
+        console.log('[AuthService] signOut called');
+        try {
             await supabase.auth.signOut();
+            // handleSignOut will be called by the auth state change event
+        } catch (error) {
+            console.error('[AuthService] Sign out error:', error);
+            // Force local state update even if Supabase call fails
             this.handleSignOut();
-        });
+        }
     }
 
     /**
-     * Refresh session
+     * Refresh current session
      */
     async refreshSession() {
-        return this.queueOperation('refreshSession', async () => {
+        console.log('[AuthService] refreshSession called');
+        try {
             const { data, error } = await supabase.auth.refreshSession();
-            if (error) throw error;
-            return data;
-        });
+            if (error) {
+                console.error('[AuthService] Session refresh error:', error);
+            }
+            return { data, error };
+        } catch (error) {
+            console.error('[AuthService] Session refresh failed:', error);
+            return { data: null, error };
+        }
     }
 
     /**
-     * Check role with caching and validation
+     * Check if user has specific role(s)
      */
-    hasRole(allowedRoles) {
-        if (!this.authState.profile) return false;
-        if (!Array.isArray(allowedRoles)) {
-            allowedRoles = [allowedRoles];
+    hasRole(roles) {
+        if (!this.authState.profile?.role) return false;
+
+        if (Array.isArray(roles)) {
+            return roles.includes(this.authState.profile.role);
         }
-        return allowedRoles.includes(this.authState.profile.role);
+
+        return this.authState.profile.role === roles;
     }
 
     /**
      * Clean up resources
      */
-    destroy() {
-        clearTimeout(this.stateUpdateTimeout);
-        clearInterval(this.sessionCheckInterval);
-
+    cleanup() {
         if (this.authSubscription) {
             this.authSubscription.unsubscribe();
         }
-
         this.subscribers.clear();
-        this.pendingOperations.clear();
-        this.operationQueue.length = 0;
     }
 }
 
@@ -555,8 +332,6 @@ class AuthService {
 export const authService = new AuthService();
 
 // React hook for using auth service
-import { useState, useEffect } from 'react';
-
 export function useAuth() {
     const [authState, setAuthState] = useState(() => authService.getState());
 
