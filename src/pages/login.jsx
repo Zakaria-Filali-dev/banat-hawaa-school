@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../services/supabaseClient";
+import { useAuth } from "../services/authService";
 
 export default function Login() {
   console.log("🎯 LOGIN COMPONENT LOADED");
@@ -9,126 +10,82 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user, profile, loading: authLoading } = useAuth();
+
+  // Enterprise-grade redirect handling
+  useEffect(() => {
+    console.log("🔍 Auth state check:", {
+      user: !!user,
+      profile: !!profile,
+      authLoading,
+    });
+
+    // Only redirect if auth is fully loaded and user is authenticated
+    if (!authLoading && user && profile) {
+      console.log(
+        "✅ User authenticated, redirecting based on role:",
+        profile.role
+      );
+      setLoading(false); // Clear login loading state
+
+      const redirectPath = {
+        admin: "/admin",
+        teacher: "/teacher",
+        student: "/student",
+      }[profile.role];
+
+      if (redirectPath) {
+        console.log(`🚀 Redirecting to ${redirectPath}`);
+        navigate(redirectPath, { replace: true });
+      } else {
+        console.error("❌ Invalid role:", profile.role);
+        setErrorMsg(`Invalid user role: ${profile.role}`);
+        setLoading(false);
+      }
+    }
+  }, [user, profile, authLoading, navigate]);
 
   const handleLogin = async (e) => {
-    console.log("🚀 HANDLELOGIN CALLED - Starting login process");
+    console.log("🚀 ENTERPRISE LOGIN - Starting authentication");
     e.preventDefault();
     setErrorMsg("");
     setLoading(true);
-    console.log("🔄 Login state set, calling Supabase auth...");
 
     try {
-      console.log("🔐 About to call signInWithPassword...");
-      let authResponse;
-      try {
-        authResponse = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        console.log("📡 Raw Supabase response:", authResponse);
-      } catch (authError) {
-        console.error("💥 Supabase auth call failed:", authError);
-        throw authError;
-      }
+      console.log("� Calling Supabase authentication...");
 
-      const { data, error } = authResponse;
-      console.log("📡 Extracted data and error:", {
-        data: !!data,
-        error: !!error,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      console.log("📡 Auth response:", {
+        success: !error,
         hasUser: !!data?.user,
       });
 
       if (error) {
-        console.log("❌ Auth error occurred:", error);
+        console.log("❌ Authentication failed:", error.message);
         setErrorMsg(error.message);
         setLoading(false);
         return;
       }
 
-      console.log("✅ No auth error, checking user data...");
-
       if (!data?.user) {
-        setErrorMsg("Login failed. Please try again.");
+        console.log("❌ No user data returned");
+        setErrorMsg("Authentication failed. Please try again.");
         setLoading(false);
         return;
       }
 
-      console.log("Login successful, user ID:", data.user.id);
-      console.log("Waiting for profile lookup...");
-
-      // Set a backup timeout to prevent infinite loading
-      const backupTimeout = setTimeout(() => {
-        console.log("Backup timeout reached - forcing page refresh");
-        setErrorMsg("Login taking too long. Refreshing page...");
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      }, 8000); // 8 second backup
-
-      // Wait a moment for auth state to propagate, then check profile
-      const profileTimeout = setTimeout(async () => {
-        try {
-          console.log("Starting profile lookup for user:", data.user.id);
-
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", data.user.id)
-            .single();
-
-          console.log("Profile lookup result:", { profile, profileError });
-
-          if (profileError) {
-            console.error("Profile lookup error:", profileError);
-            setErrorMsg(`Profile lookup failed: ${profileError.message}`);
-            setLoading(false);
-            return;
-          }
-
-          if (!profile) {
-            console.error("No profile found for user");
-            setErrorMsg("User profile not found. Please contact support.");
-            setLoading(false);
-            return;
-          }
-
-          console.log("User role:", profile.role);
-          console.log("Navigating to dashboard...");
-
-          // Clear the backup timeout since we're succeeding
-          clearTimeout(backupTimeout);
-
-          // Redirect based on role
-          switch (profile.role) {
-            case "admin":
-              console.log("Redirecting to admin dashboard");
-              navigate("/admin", { replace: true });
-              break;
-            case "teacher":
-              console.log("Redirecting to teacher dashboard");
-              navigate("/teacher", { replace: true });
-              break;
-            case "student":
-              console.log("Redirecting to student dashboard");
-              navigate("/student", { replace: true });
-              break;
-            default:
-              console.error("Invalid role:", profile.role);
-              setErrorMsg(
-                `Invalid user role: ${profile.role}. Please contact support.`
-              );
-              setLoading(false);
-          }
-        } catch (profileError) {
-          console.error("Profile fetch error:", profileError);
-          clearTimeout(backupTimeout);
-          setErrorMsg(`Failed to get user profile: ${profileError.message}`);
-          setLoading(false);
-        }
-      }, 2000); // Increased to 2 seconds for auth state to settle
+      console.log(
+        "✅ Authentication successful - waiting for auth service to process..."
+      );
+      // Don't set loading to false here - let useEffect handle redirect
+      // The AuthService will update state and trigger the useEffect redirect
     } catch (error) {
-      console.error("Login error:", error);
-      setErrorMsg("Unexpected error. Please try again.");
+      console.error("💥 Unexpected login error:", error);
+      setErrorMsg("Unexpected error occurred. Please try again.");
       setLoading(false);
     }
   };
