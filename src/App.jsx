@@ -9,8 +9,9 @@ import Confirm from "./pages/auth/Confirm.jsx";
 import AuthCallback from "./pages/auth/AuthCallback.jsx";
 import SetPassword from "./pages/auth/set-password.jsx";
 import SetupPassword from "./pages/setup-password.jsx";
-import { useEffect, useState } from "react";
+import { useAuth } from "./services/authService";
 import { supabase } from "./services/supabaseClient";
+import { DataCacheProvider } from "./contexts/DataCacheContext";
 
 // Auth Error Handler Component
 function AuthErrorHandler({ error }) {
@@ -170,128 +171,44 @@ function AuthErrorHandler({ error }) {
 }
 
 function ProtectedRoute({ children, allowedRoles }) {
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { user, loading, error, hasRole } = useAuth();
 
-  useEffect(() => {
-    let isMounted = true;
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+          fontSize: "1.2rem",
+          fontWeight: "600",
+        }}
+      >
+        <div
+          style={{
+            background: "rgba(255, 255, 255, 0.1)",
+            backdropFilter: "blur(20px)",
+            padding: "2rem",
+            borderRadius: "16px",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ marginBottom: "1rem" }}>🔐</div>
+          Authenticating...
+        </div>
+      </div>
+    );
+  }
 
-    // Set up auth state listener for real-time session monitoring
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
-
-      if (event === "SIGNED_OUT" || (event === "TOKEN_REFRESHED" && !session)) {
-        // User was logged out (possibly by admin action)
-        setUser(null);
-        setRole(null);
-        setError("Your session has ended. Please log in again.");
-        return;
-      }
-
-      if (event === "SIGNED_IN" && session) {
-        // User signed in, verify their profile still exists
-        try {
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", session.user.id)
-            .single();
-
-          if (profileError?.code === "PGRST116") {
-            setError("Your account has been removed by an administrator.");
-            await supabase.auth.signOut();
-            return;
-          }
-
-          if (profile?.role) {
-            setUser(session.user);
-            setRole(profile.role);
-            setError(null);
-          }
-        } catch (err) {
-          console.error("Profile verification error:", err);
-        }
-      }
-    });
-
-    const getUser = async () => {
-      try {
-        const { data, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (!data?.user) {
-          if (isMounted) {
-            setUser(null);
-            setRole(null);
-            setLoading(false);
-          }
-          return;
-        }
-        if (isMounted) setUser(data.user);
-        // Fetch role from profiles table using user ID for more reliable lookup
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", data.user.id)
-          .single();
-
-        if (profileError) {
-          // Check if profile doesn't exist (account deleted)
-          if (
-            profileError.code === "PGRST116" ||
-            profileError.message?.includes("No rows found")
-          ) {
-            if (isMounted)
-              setError("Your account has been removed by an administrator.");
-          } else {
-            throw profileError;
-          }
-          return;
-        }
-
-        if (!profile?.role) {
-          if (isMounted) setError("Your account access has been revoked.");
-          return;
-        }
-
-        if (isMounted) setRole(profile.role);
-      } catch (err) {
-        if (isMounted) {
-          // Provide specific error messages based on the error
-          if (err.message?.includes("JWT") || err.message?.includes("token")) {
-            setError("Your session has expired. Please log in again.");
-          } else if (
-            err.message?.includes("network") ||
-            err.message?.includes("fetch")
-          ) {
-            setError(
-              "Network connection error. Please check your connection and try again."
-            );
-          } else {
-            setError("Authentication error. Please try again.");
-          }
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    getUser();
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
   if (error) return <AuthErrorHandler error={error} />;
   if (!user) return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(role)) {
+  if (allowedRoles && !hasRole(allowedRoles)) {
     return <Navigate to="/login" replace />;
   }
+
   return children;
 }
 
@@ -305,7 +222,9 @@ function App() {
           path="/admin"
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
-              <Admins />
+              <DataCacheProvider>
+                <Admins />
+              </DataCacheProvider>
             </ProtectedRoute>
           }
         />

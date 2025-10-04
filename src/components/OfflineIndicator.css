@@ -1,0 +1,375 @@
+/* Offline Indicator Styles */
+
+.offline-indicator {
+    position: fixed;
+    z-index: 9999;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border: 1px solid #e5e7eb;
+    max-width: 320px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(12px);
+}
+
+/* Position variants */
+.offline-indicator.bottom-right {
+    bottom: 2rem;
+    right: 2rem;
+}
+
+.offline-indicator.bottom-left {
+    bottom: 2rem;
+    left: 2rem;
+}
+
+.offline-indicator.top-right {
+    top: 2rem;
+    right: 2rem;
+}
+
+.offline-indicator.top-left {
+    top: 2rem;
+    left: 2rem;
+}
+
+/* Status variants */
+.offline-indicator.offline {
+    border-color: #f59e0b;
+    background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%);
+}
+
+.offline-indicator.online {
+    border-color: #10b981;
+    background: linear-gradient(135deg, #ecfdf5 0%, #ffffff 100%);
+}
+
+/* Compact version */
+.offline-indicator.compact {
+    padding: 0.75rem;
+    border-radius: 50%;
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.offline-indicator.compact .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #10b981;
+    position: relative;
+}
+
+.offline-indicator.compact.offline .status-dot {
+    background: #ef4444;
+}
+
+.offline-indicator.compact .pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ef4444;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.offline-indicator.compact .queue-count {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    background: #dc2626;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.125rem 0.375rem;
+    border-radius: 10px;
+    min-width: 1.25rem;
+    text-align: center;
+}
+
+/* Full indicator content */
+.indicator-content {
+    padding: 1rem;
+}
+
+.status-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.status-icon {
+    font-size: 1.25rem;
+}
+
+.status-text strong {
+    display: block;
+    font-size: 1rem;
+    color: #1f2937;
+}
+
+.offline-duration {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 0.125rem;
+}
+
+.offline-message,
+.reconnected-message {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.reconnected-message {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.offline-message p,
+.reconnected-message p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: #374151;
+}
+
+.queue-info {
+    background: #f9fafb;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.queue-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.queue-icon {
+    font-size: 1rem;
+}
+
+.queue-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+.processing-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.processing-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #e5e7eb;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.retry-btn {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.retry-btn:hover {
+    background: #2563eb;
+}
+
+.connection-details {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 0.75rem;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.detail-item:last-child {
+    margin-bottom: 0;
+}
+
+.detail-item .label {
+    color: #6b7280;
+}
+
+.detail-item .value {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.detail-item .value.online {
+    color: #10b981;
+}
+
+.detail-item .value.offline {
+    color: #ef4444;
+}
+
+/* Status Badge */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid;
+    position: relative;
+}
+
+.status-badge.online {
+    background: #ecfdf5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+.status-badge.offline {
+    background: #fef2f2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.status-indicator {
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.queue-badge {
+    position: absolute;
+    top: -0.25rem;
+    right: -0.25rem;
+    background: #dc2626;
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.75rem;
+    min-width: 1rem;
+    text-align: center;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(2);
+        opacity: 0;
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+    .offline-indicator {
+        left: 1rem !important;
+        right: 1rem !important;
+        bottom: 1rem !important;
+        max-width: none;
+    }
+
+    .offline-indicator.compact {
+        bottom: 1rem;
+        right: 1rem;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .offline-indicator {
+        background: #1f2937;
+        border-color: #374151;
+        color: #f3f4f6;
+    }
+
+    .offline-indicator.offline {
+        background: linear-gradient(135deg, #451a03 0%, #1f2937 100%);
+        border-color: #d97706;
+    }
+
+    .offline-indicator.online {
+        background: linear-gradient(135deg, #064e3b 0%, #1f2937 100%);
+        border-color: #059669;
+    }
+
+    .status-text strong {
+        color: #f3f4f6;
+    }
+
+    .queue-info {
+        background: #374151;
+    }
+
+    .connection-details {
+        border-color: #4b5563;
+    }
+
+    .status-badge.online {
+        background: #064e3b;
+        color: #6ee7b7;
+        border-color: #059669;
+    }
+
+    .status-badge.offline {
+        background: #7f1d1d;
+        color: #fca5a5;
+        border-color: #dc2626;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .offline-indicator {
+        border-width: 2px;
+    }
+
+    .status-badge {
+        border-width: 2px;
+    }
+}

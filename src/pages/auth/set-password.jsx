@@ -1,70 +1,34 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../services/supabaseClient";
+import { usePasswordValidation } from "../../hooks/useFormValidation";
 import "./set-password.css";
 
 export default function SetPassword() {
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
-  const [passwordStrength, setPasswordStrength] = useState({
-    score: 0,
-    feedback: [],
-  });
   const navigate = useNavigate();
 
-  // Password strength checker
-  const checkPasswordStrength = (pass) => {
-    const feedback = [];
-    let score = 0;
-
-    if (pass.length >= 8) {
-      score += 1;
-    } else {
-      feedback.push("At least 8 characters");
-    }
-
-    if (/[A-Z]/.test(pass)) {
-      score += 1;
-    } else {
-      feedback.push("At least one uppercase letter");
-    }
-
-    if (/[a-z]/.test(pass)) {
-      score += 1;
-    } else {
-      feedback.push("At least one lowercase letter");
-    }
-
-    if (/[0-9]/.test(pass)) {
-      score += 1;
-    } else {
-      feedback.push("At least one number");
-    }
-
-    if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(pass)) {
-      score += 1;
-    } else {
-      feedback.push("At least one special character");
-    }
-
-    return { score, feedback };
-  };
-
-  // Update password strength when password changes
-  useEffect(() => {
-    if (password) {
-      const strength = checkPasswordStrength(password);
-      setPasswordStrength(strength);
-    } else {
-      setPasswordStrength({ score: 0, feedback: [] });
-    }
-  }, [password]);
+  // Enhanced password validation
+  const {
+    password,
+    confirmPassword,
+    setPassword,
+    setConfirmPassword,
+    validation,
+  } = usePasswordValidation({
+    strengthRequired: "strong", // Require strong passwords
+    onValidation: (result) => {
+      // Clear generic error when validation updates
+      if (error && result.errors.length === 0) {
+        setError("");
+      }
+    },
+  });
 
   // Check session on mount
   useEffect(() => {
@@ -84,21 +48,15 @@ export default function SetPassword() {
     setError("");
     setSuccess(false);
 
-    // Validation checks
-    if (!password) {
-      setError("Password is required");
-      setLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
-
-    if (passwordStrength.score < 4) {
-      setError("Password does not meet security requirements");
+    // Enhanced validation checks
+    if (!validation.isValid || !validation.match) {
+      if (validation.errors.length > 0) {
+        setError(validation.errors[0]);
+      } else if (!validation.match) {
+        setError("Passwords do not match");
+      } else {
+        setError("Please check your password requirements");
+      }
       setLoading(false);
       return;
     }
@@ -131,15 +89,33 @@ export default function SetPassword() {
   }
 
   const getStrengthColor = () => {
-    if (passwordStrength.score <= 2) return "#ef4444";
-    if (passwordStrength.score <= 3) return "#f59e0b";
-    return "#10b981";
+    switch (validation.strengthLevel) {
+      case "weak":
+        return "#ef4444";
+      case "medium":
+        return "#f59e0b";
+      case "strong":
+        return "#10b981";
+      case "very-strong":
+        return "#059669";
+      default:
+        return "#6b7280";
+    }
   };
 
   const getStrengthText = () => {
-    if (passwordStrength.score <= 2) return "Weak";
-    if (passwordStrength.score <= 3) return "Medium";
-    return "Strong";
+    switch (validation.strengthLevel) {
+      case "weak":
+        return "Weak";
+      case "medium":
+        return "Medium";
+      case "strong":
+        return "Strong";
+      case "very-strong":
+        return "Very Strong";
+      default:
+        return "Enter password";
+    }
   };
 
   return (
@@ -220,7 +196,7 @@ export default function SetPassword() {
                 required
                 className={
                   password
-                    ? passwordStrength.score >= 4
+                    ? validation.isValid && validation.match
                       ? "valid"
                       : "invalid"
                     : ""
@@ -241,7 +217,7 @@ export default function SetPassword() {
                   <div
                     className="strength-fill"
                     style={{
-                      width: `${(passwordStrength.score / 5) * 100}%`,
+                      width: `${(validation.strength / 8) * 100}%`,
                       backgroundColor: getStrengthColor(),
                     }}
                   ></div>
@@ -252,6 +228,18 @@ export default function SetPassword() {
                 >
                   {getStrengthText()}
                 </span>
+              </div>
+            )}
+
+            {/* Validation Errors */}
+            {validation.errors.length > 0 && (
+              <div className="validation-errors">
+                {validation.errors.map((error, index) => (
+                  <div key={index} className="validation-error">
+                    <span className="error-icon">⚠️</span>
+                    {error}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -285,19 +273,18 @@ export default function SetPassword() {
                 {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
               </button>
             </div>
-            {confirmPassword && password !== confirmPassword && (
-              <div className="error-message">Passwords do not match</div>
+            {confirmPassword && !validation.match && (
+              <div className="validation-error">
+                <span className="error-icon">⚠️</span>
+                Passwords do not match
+              </div>
             )}
           </div>
 
           <button
             type="submit"
             className={`submit-btn ${loading ? "loading" : ""}`}
-            disabled={
-              loading ||
-              passwordStrength.score < 4 ||
-              password !== confirmPassword
-            }
+            disabled={loading || !validation.isValid || !validation.match}
           >
             {loading ? (
               <>

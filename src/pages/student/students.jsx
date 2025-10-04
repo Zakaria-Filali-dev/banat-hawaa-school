@@ -73,19 +73,39 @@ export default function Students() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Render notifications in message container
+  // Render notifications in message container - XSS Safe Implementation
   useEffect(() => {
     const container = document.getElementById("message-container");
     if (!container) return;
 
-    container.innerHTML = "";
+    // Secure cleanup - remove all child nodes instead of innerHTML
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
 
     notifications.forEach((notification) => {
+      // Validate notification data to prevent XSS
+      if (
+        !notification ||
+        typeof notification.text !== "string" ||
+        typeof notification.type !== "string"
+      ) {
+        console.warn("Invalid notification data detected:", notification);
+        return;
+      }
+
       const messageDiv = document.createElement("div");
-      messageDiv.className = `message ${notification.type}`;
-      messageDiv.textContent = notification.text;
+      // Sanitize CSS class name to prevent injection
+      const sanitizedType = notification.type.replace(/[^a-zA-Z0-9-_]/g, "");
+      messageDiv.className = `message ${sanitizedType}`;
+      messageDiv.textContent = notification.text; // Safe text content
       messageDiv.style.animation = "messageSlideIn 0.3s ease-out forwards";
-      container.appendChild(messageDiv);
+
+      try {
+        container.appendChild(messageDiv);
+      } catch (error) {
+        console.error("Failed to append notification:", error);
+      }
     });
   }, [notifications]);
 

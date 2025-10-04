@@ -1,11 +1,33 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { supabase } from "../../services/supabaseClient";
 import { useNavigate, useLocation } from "react-router-dom";
+import { queueUserOperation } from "../../services/operationQueue";
+import { validationService } from "../../services/validationService";
+import { useDataCache } from "../../contexts/DataCacheContext";
+import {
+  useDebouncedCallback,
+  useIsMounted,
+  makeSafeStateUpdater,
+} from "../../hooks/useMemoryLeakPrevention";
 import MessageModal from "../../components/MessageModal";
 import SuspensionModal from "../../components/SuspensionModal";
 import SubjectEditModal from "../../components/SubjectEditModal";
 import AnnouncementEditModal from "../../components/AnnouncementEditModal";
 import MultipleTeacherAssignModal from "../../components/MultipleTeacherAssignModal";
+import LoadingIndicator from "../../components/LoadingIndicator";
+import CacheStatus from "../../components/CacheStatus";
+import OfflineIndicator, {
+  OfflineStatusBadge,
+} from "../../components/OfflineIndicator";
+import {
+  useNetworkStatus,
+  useOfflineQueue,
+  useOfflineCache,
+} from "../../hooks/useOfflineHandling";
+import {
+  useSecurityMonitoring,
+  useRateLimit,
+} from "../../hooks/useSecurityMonitoring";
 import "./admin.css";
 
 // Removed parent/guardian information from student application cards
@@ -17,6 +39,28 @@ const getApiBaseUrl = () => {
 };
 
 const Admin = () => {
+  const { cachedFetch, invalidateCache, CACHE_KEYS } = useDataCache();
+  const isMountedRef = useIsMounted();
+
+  // Offline handling
+  const isOnline = useNetworkStatus();
+  const { addToQueue, processQueue, getQueueStatus } = useOfflineQueue();
+  const { getCachedData, setCachedData } = useOfflineCache();
+
+  // Security monitoring
+  const { verifyBeforeCriticalOperation } = useSecurityMonitoring("admin", {
+    onSecurityViolation: (type) => {
+      console.error(`[SECURITY] Admin security violation: ${type}`);
+      setModalState({
+        message: "Security violation detected. Please log in again.",
+        type: "error",
+      });
+    },
+  });
+
+  // Rate limiting for critical operations
+  const { checkRateLimit, getRemainingCalls } = useRateLimit(3, 60000); // 3 calls per minute for deletions
+
   const [activeTab, setActiveTab] = useState("applications");
   const [applications, setApplications] = useState([]);
   const [subjects, setSubjects] = useState([]);
@@ -26,6 +70,19 @@ const Admin = () => {
   const [sessions, setSessions] = useState([]);
   const [pendingSessions, setPendingSessions] = useState([]);
 
+  // Create safe state setters to prevent updates on unmounted components
+  const safeSetApplications = makeSafeStateUpdater(
+    setApplications,
+    isMountedRef
+  );
+  const safeSetSubjects = makeSafeStateUpdater(setSubjects, isMountedRef);
+  const safeSetTeachers = makeSafeStateUpdater(setTeachers, isMountedRef);
+  const safeSetStudents = makeSafeStateUpdater(setStudents, isMountedRef);
+  const safeSetAnnouncements = makeSafeStateUpdater(
+    setAnnouncements,
+    isMountedRef
+  );
+
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [stats, setStats] = useState({
@@ -34,7 +91,101 @@ const Admin = () => {
     totalTeachers: 0,
     totalSubjects: 0,
   });
+
+  // Granular loading states for different operations
+  const [loadingStates, setLoadingStates] = useState({
+    applications: false,
+    subjects: false,
+    teachers: false,
+    students: false,
+    announcements: false,
+    sessions: false,
+    messages: false,
+    suspendedUsers: false,
+    creatingTeacher: false,
+    creatingSubject: false,
+    creatingAnnouncement: false,
+    deletingUser: false,
+    updatingSubject: false,
+  });
+
+  // Helper function to update loading states
+  const updateLoadingState = useCallback((key, isLoading) => {
+    setLoadingStates((prev) => ({
+      ...prev,
+      [key]: isLoading,
+    }));
+  }, []);
+
+  // **SECURITY ENHANCEMENT**: Get current auth token for secure API calls
+  const getAuthToken = useCallback(async () => {
+    try {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+      if (error || !session?.access_token) {
+        throw new Error("No valid session found");
+      }
+      return session.access_token;
+    } catch (error) {
+      console.error("[AUTH] Failed to get auth token:", error);
+      throw new Error("Authentication failed - please log in again");
+    }
+  }, []);
   const navigate = useNavigate();
+
+  // Offline-aware fetch wrapper
+  const offlineAwareFetch = useCallback(
+    async (url, options = {}) => {
+      if (!isOnline) {
+        // Try to get cached data when offline
+        const cachedData = getCachedData(url);
+        if (cachedData) {
+          console.log("Using offline cached data for:", url);
+          return cachedData;
+        }
+
+        // Queue the request for when back online
+        if (options.method && options.method !== "GET") {
+          addToQueue({
+            url,
+            options,
+            timestamp: Date.now(),
+            type: "admin_operation",
+          });
+          throw new Error("Operation queued for when back online");
+        }
+
+        throw new Error("No cached data available and device is offline");
+      }
+
+      try {
+        // Use cached fetch when online
+        const result = await cachedFetch(url, options);
+
+        // Cache the result for offline access
+        if (options.method === "GET" || !options.method) {
+          setCachedData(url, result);
+        }
+
+        return result;
+      } catch (error) {
+        // If fetch fails and it's a mutation, queue it
+        if (options.method && options.method !== "GET") {
+          addToQueue({
+            url,
+            options,
+            timestamp: Date.now(),
+            type: "admin_operation",
+            error: error.message,
+          });
+        }
+        throw error;
+      }
+    },
+    [isOnline, cachedFetch, getCachedData, setCachedData, addToQueue]
+  );
   const location = useLocation();
 
   // Form states
@@ -104,6 +255,9 @@ const Admin = () => {
   const [showNewTeacherForm, setShowNewTeacherForm] = useState(false);
   const [showNewAnnouncementForm, setShowNewAnnouncementForm] = useState(false);
 
+  // Form validation states
+  const [teacherFormErrors, setTeacherFormErrors] = useState({});
+
   // Edit modal states
   const [showSubjectEditModal, setShowSubjectEditModal] = useState(false);
   const [selectedSubjectForEdit, setSelectedSubjectForEdit] = useState(null);
@@ -117,105 +271,214 @@ const Admin = () => {
     useState(null);
 
   const fetchApplications = useCallback(async () => {
+    updateLoadingState("applications", true);
     try {
-      const { data, error } = await supabase
-        .from("pending_applications")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const result = await offlineAwareFetch(`${getApiBaseUrl()}/applications`);
 
-      if (error) throw error;
-      setApplications(data || []);
+      safeSetApplications(result || []);
+
+      if (!isOnline) {
+        console.log("📦 Applications loaded from offline cache");
+      }
     } catch (error) {
       console.error("Error fetching applications:", error);
+
+      if (!isOnline && error.message.includes("queued")) {
+        setModalState({
+          message: "You're offline. Changes will sync when reconnected.",
+          type: "warning",
+        });
+      } else {
+        setModalState({
+          message: "Failed to load applications. Please try again.",
+          type: "error",
+        });
+      }
+    } finally {
+      updateLoadingState("applications", false);
     }
-  }, []);
+  }, [
+    updateLoadingState,
+    offlineAwareFetch,
+    safeSetApplications,
+    isOnline,
+    setModalState,
+  ]);
 
-  const fetchSubjects = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from("subjects")
-        .select(
-          `
-          *,
-          teacher:profiles(full_name, email)
-        `
-        )
-        .order("name");
+  const fetchSubjects = useCallback(
+    async (forceRefresh = false) => {
+      updateLoadingState("subjects", true);
+      try {
+        const result = await cachedFetch(
+          CACHE_KEYS.SUBJECTS,
+          async () => {
+            const { data, error } = await supabase
+              .from("subjects")
+              .select(
+                `
+              *,
+              teacher:profiles(full_name, email)
+            `
+              )
+              .order("name");
 
-      if (error) throw error;
-      setSubjects(data || []);
-    } catch (error) {
-      console.error("Error fetching subjects:", error);
-    }
-  }, []);
+            if (error) throw error;
+            return data || [];
+          },
+          forceRefresh
+        );
 
-  const fetchTeachers = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(
-          `
-          *,
-          teacher_subjects(
-            subject:subjects(
-              id,
-              name
-            )
-          )
-        `
-        )
-        .eq("role", "teacher")
-        .order("full_name");
+        safeSetSubjects(result.data);
 
-      if (error) throw error;
-      setTeachers(data || []);
-    } catch (error) {
-      console.error("Error fetching teachers:", error);
-    }
-  }, []);
+        if (result.fromCache && !result.stale) {
+          console.log("📦 Subjects loaded from cache");
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+        setModalState({
+          message: "Failed to load subjects. Please try again.",
+          type: "error",
+        });
+      } finally {
+        updateLoadingState("subjects", false);
+      }
+    },
+    [updateLoadingState, cachedFetch, CACHE_KEYS, safeSetSubjects]
+  );
 
-  const fetchStudents = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(
-          `
-          *,
-          student_subjects(
-            subjects(name)
-          )
-        `
-        )
-        .eq("role", "student")
-        .order("full_name");
+  const fetchTeachers = useCallback(
+    async (forceRefresh = false) => {
+      updateLoadingState("teachers", true);
+      try {
+        const result = await cachedFetch(
+          CACHE_KEYS.TEACHERS,
+          async () => {
+            const { data, error } = await supabase
+              .from("profiles")
+              .select(
+                `
+              *,
+              teacher_subjects(
+                subject:subjects(
+                  id,
+                  name
+                )
+              )
+            `
+              )
+              .eq("role", "teacher")
+              .order("full_name");
 
-      if (error) throw error;
-      setStudents(data || []);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-    }
-  }, []);
+            if (error) throw error;
+            return data || [];
+          },
+          forceRefresh
+        );
 
-  const fetchAnnouncements = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from("announcements")
-        .select(
-          `
-          *,
-          author:profiles(full_name),
-          subject:subjects(name)
-        `
-        )
-        .order("created_at", { ascending: false })
-        .limit(10);
+        safeSetTeachers(result.data);
 
-      if (error) throw error;
-      setAnnouncements(data || []);
-    } catch (error) {
-      console.error("Error fetching announcements:", error);
-    }
-  }, []);
+        if (result.fromCache && !result.stale) {
+          console.log("📦 Teachers loaded from cache");
+        }
+      } catch (error) {
+        console.error("Error fetching teachers:", error);
+        setModalState({
+          message: "Failed to load teachers. Please try again.",
+          type: "error",
+        });
+      } finally {
+        updateLoadingState("teachers", false);
+      }
+    },
+    [updateLoadingState, cachedFetch, CACHE_KEYS, safeSetTeachers]
+  );
+
+  const fetchStudents = useCallback(
+    async (forceRefresh = false) => {
+      updateLoadingState("students", true);
+      try {
+        const result = await cachedFetch(
+          CACHE_KEYS.STUDENTS,
+          async () => {
+            const { data, error } = await supabase
+              .from("profiles")
+              .select(
+                `
+              *,
+              student_subjects(
+                subjects(name)
+              )
+            `
+              )
+              .eq("role", "student")
+              .order("full_name");
+
+            if (error) throw error;
+            return data || [];
+          },
+          forceRefresh
+        );
+
+        safeSetStudents(result.data);
+
+        if (result.fromCache && !result.stale) {
+          console.log("📦 Students loaded from cache");
+        }
+      } catch (error) {
+        console.error("Error fetching students:", error);
+        setModalState({
+          message: "Failed to load students. Please try again.",
+          type: "error",
+        });
+      } finally {
+        updateLoadingState("students", false);
+      }
+    },
+    [updateLoadingState, cachedFetch, CACHE_KEYS, safeSetStudents]
+  );
+
+  const fetchAnnouncements = useCallback(
+    async (forceRefresh = false) => {
+      updateLoadingState("announcements", true);
+      try {
+        const result = await cachedFetch(
+          CACHE_KEYS.ANNOUNCEMENTS,
+          async () => {
+            const { data, error } = await supabase
+              .from("announcements")
+              .select(
+                `
+              *,
+              author:profiles(full_name),
+              subject:subjects(name)
+            `
+              )
+              .order("created_at", { ascending: false })
+              .limit(10);
+
+            if (error) throw error;
+            return data || [];
+          },
+          forceRefresh
+        );
+
+        safeSetAnnouncements(result.data);
+
+        if (result.fromCache && !result.stale) {
+          console.log("📦 Announcements loaded from cache");
+        }
+      } catch (error) {
+        console.error("Error fetching announcements:", error);
+        setModalState({
+          message: "Failed to load announcements. Please try again.",
+          type: "error",
+        });
+      } finally {
+        updateLoadingState("announcements", false);
+      }
+    },
+    [updateLoadingState, cachedFetch, CACHE_KEYS, safeSetAnnouncements]
+  );
 
   const fetchStats = useCallback(async () => {
     try {
@@ -408,6 +671,47 @@ const Admin = () => {
     fetchMessages,
     user?.id,
   ]);
+
+  // Handle network status changes and queue processing
+  useEffect(() => {
+    let processingTimer;
+
+    if (isOnline) {
+      // Process queued operations when coming back online
+      processingTimer = setTimeout(async () => {
+        try {
+          const queueStatus = getQueueStatus();
+          if (queueStatus.pending > 0) {
+            console.log(
+              `🔄 Processing ${queueStatus.pending} queued operations...`
+            );
+            await processQueue();
+
+            // Refresh data after processing queue
+            await fetchAllData();
+
+            setModalState({
+              message: `Synced ${queueStatus.pending} pending operations`,
+              type: "success",
+            });
+          }
+        } catch (error) {
+          console.error("Error processing offline queue:", error);
+          setModalState({
+            message:
+              "Some operations failed to sync. Please check your connection.",
+            type: "warning",
+          });
+        }
+      }, 1000); // Small delay to let network stabilize
+    }
+
+    return () => {
+      if (processingTimer) {
+        clearTimeout(processingTimer);
+      }
+    };
+  }, [isOnline, processQueue, getQueueStatus, fetchAllData, setModalState]);
 
   useEffect(() => {
     const checkAuthAndFetch = async () => {
@@ -614,8 +918,56 @@ const Admin = () => {
     }
   };
 
+  // Form validation functions
+  const validateTeacherForm = useCallback((formData) => {
+    const schema = {
+      email: { type: "email", label: "Email" },
+      fullName: { type: "name", label: "Full Name" },
+      phone: { type: "phone", label: "Phone Number" },
+      address: {
+        type: "text",
+        label: "Address",
+        options: { minLength: 10, maxLength: 200 },
+      },
+    };
+
+    const result = validationService.validateForm(formData, schema);
+    setTeacherFormErrors(result.errors);
+    return result;
+  }, []);
+
+  // Debounced validation function to prevent excessive validation calls
+  const debouncedValidateTeacher = useDebouncedCallback(
+    (teacherData) => validateTeacherForm(teacherData),
+    300
+  );
+
+  // Real-time validation handlers with safe debounced validation
+  const handleTeacherInputChange = useCallback(
+    (field, value) => {
+      const updatedTeacher = { ...newTeacher, [field]: value };
+      setNewTeacher(updatedTeacher);
+
+      // Safe debounced validation that cleans up on unmount
+      debouncedValidateTeacher(updatedTeacher);
+    },
+    [newTeacher, debouncedValidateTeacher]
+  );
+
   const handleCreateTeacher = async (e) => {
     e.preventDefault();
+
+    // Validate form before submission
+    const validation = validateTeacherForm(newTeacher);
+    if (!validation.isValid) {
+      setModalState({
+        message: "Please fix the form errors before submitting.",
+        type: "error",
+      });
+      return;
+    }
+
+    updateLoadingState("creatingTeacher", true);
     try {
       // First create the teacher account via API
       const response = await fetch(`${getApiBaseUrl()}/invite-student`, {
@@ -661,8 +1013,14 @@ const Admin = () => {
         address: "",
         assignedSubjects: [],
       });
-      fetchTeachers();
-      fetchSubjects(); // Refresh subjects to show new assignments
+
+      // Invalidate cache for related data
+      invalidateCache(CACHE_KEYS.TEACHERS);
+      invalidateCache(CACHE_KEYS.SUBJECTS);
+      invalidateCache(CACHE_KEYS.STATS);
+
+      fetchTeachers(true); // Force refresh
+      fetchSubjects(true); // Force refresh subjects to show new assignments
       fetchStats();
 
       setModalState({
@@ -679,6 +1037,8 @@ const Admin = () => {
         message: "Error creating teacher account: " + error.message,
         type: "error",
       });
+    } finally {
+      updateLoadingState("creatingTeacher", false);
     }
   };
 
@@ -1049,6 +1409,26 @@ const Admin = () => {
   };
 
   const handleDeleteStudent = async (studentId, studentName) => {
+    // **SECURITY ENHANCEMENT**: Verify admin privileges before critical operation
+    const isAuthorized = await verifyBeforeCriticalOperation();
+    if (!isAuthorized) {
+      setModalState({
+        message: "Security verification failed. Please log in again.",
+        type: "error",
+      });
+      return;
+    }
+
+    // **SECURITY ENHANCEMENT**: Check rate limiting
+    if (!checkRateLimit()) {
+      setModalState({
+        message: `Rate limit exceeded. You have ${getRemainingCalls()} deletion attempts remaining. Please wait before trying again.`,
+        type: "warning",
+      });
+      return;
+    }
+
+    updateLoadingState("deletingUser", true);
     const confirmMessage = `⚠️ DANGER: This will permanently delete ${studentName} and ALL their data including:
     
 • Student profile
@@ -1077,26 +1457,45 @@ This action CANNOT be undone. Are you absolutely sure?`;
     }
 
     try {
-      // Call the backend API for secure deletion
-      const response = await fetch("/api/admin-delete-user", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
+      // Use operation queue to prevent race conditions during user deletion
+      const result = await queueUserOperation(
+        studentId,
+        async () => {
+          // Call the backend API for secure deletion
+          const authToken = await getAuthToken();
+          const response = await fetch("/api/admin-delete-user", {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              userId: studentId,
+              userType: "student",
+              userName: studentName,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || "Failed to delete student");
+          }
+
+          return result;
         },
-        body: JSON.stringify({
-          userId: studentId,
-          userType: "student",
-          userName: studentName,
-        }),
-      });
+        {
+          priority: "high",
+          timeout: 60000, // 60 seconds for delete operations
+          retries: true,
+        }
+      );
 
-      const result = await response.json();
+      // Invalidate cache for related data
+      invalidateCache(CACHE_KEYS.STUDENTS);
+      invalidateCache(CACHE_KEYS.STATS);
 
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to delete student");
-      }
-
-      fetchStudents();
+      fetchStudents(true); // Force refresh
       setModalState({
         message:
           result.message ||
@@ -1109,10 +1508,31 @@ This action CANNOT be undone. Are you absolutely sure?`;
         message: "Error deleting student: " + error.message,
         type: "error",
       });
+    } finally {
+      updateLoadingState("deletingUser", false);
     }
   };
 
   const handleDeleteTeacher = async (teacherId, teacherName) => {
+    // **SECURITY ENHANCEMENT**: Verify admin privileges before critical operation
+    const isAuthorized = await verifyBeforeCriticalOperation();
+    if (!isAuthorized) {
+      setModalState({
+        message: "Security verification failed. Please log in again.",
+        type: "error",
+      });
+      return;
+    }
+
+    // **SECURITY ENHANCEMENT**: Check rate limiting
+    if (!checkRateLimit()) {
+      setModalState({
+        message: `Rate limit exceeded. You have ${getRemainingCalls()} deletion attempts remaining. Please wait before trying again.`,
+        type: "warning",
+      });
+      return;
+    }
+
     const confirmMessage = `⚠️ DANGER: This will permanently delete ${teacherName} and ALL their data including:
 • All assignments they created
 • All class sessions they scheduled
@@ -1137,24 +1557,39 @@ Type "DELETE" to confirm permanent deletion:`;
     if (!finalConfirm) return;
 
     try {
-      // Call the backend API for secure deletion
-      const response = await fetch("/api/admin-delete-user", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
+      // Use operation queue to prevent race conditions during user deletion
+      const result = await queueUserOperation(
+        teacherId,
+        async () => {
+          // Call the backend API for secure deletion
+          const authToken = await getAuthToken();
+          const response = await fetch("/api/admin-delete-user", {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${authToken}`,
+            },
+            body: JSON.stringify({
+              userId: teacherId,
+              userType: "teacher",
+              userName: teacherName,
+            }),
+          });
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            throw new Error(result.error || "Failed to delete teacher");
+          }
+
+          return result;
         },
-        body: JSON.stringify({
-          userId: teacherId,
-          userType: "teacher",
-          userName: teacherName,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to delete teacher");
-      }
+        {
+          priority: "high",
+          timeout: 60000, // 60 seconds for delete operations
+          retries: true,
+        }
+      );
 
       fetchTeachers();
       setModalState({
@@ -1305,6 +1740,58 @@ Type "DELETE" to confirm permanent deletion:`;
         : [...prev, subjectId]
     );
   };
+
+  // Accessibility: Keyboard navigation for tab panels
+  const handleTabKeyDown = useCallback(
+    (event) => {
+      const tabs = [
+        "applications",
+        "teachers",
+        "subjects",
+        "students",
+        "session-approvals",
+        "sessions",
+        "announcements",
+        "user-management",
+        "messages",
+      ];
+
+      const currentIndex = tabs.indexOf(activeTab);
+      let newIndex = currentIndex;
+
+      switch (event.key) {
+        case "ArrowRight":
+        case "ArrowDown":
+          event.preventDefault();
+          newIndex = (currentIndex + 1) % tabs.length;
+          break;
+        case "ArrowLeft":
+        case "ArrowUp":
+          event.preventDefault();
+          newIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
+          break;
+        case "Home":
+          event.preventDefault();
+          newIndex = 0;
+          break;
+        case "End":
+          event.preventDefault();
+          newIndex = tabs.length - 1;
+          break;
+        default:
+          return;
+      }
+
+      setActiveTab(tabs[newIndex]);
+
+      // Focus the new tab
+      const newTabElement = document.getElementById(`${tabs[newIndex]}-tab`);
+      if (newTabElement) {
+        newTabElement.focus();
+      }
+    },
+    [activeTab]
+  );
 
   // Student Subject Management Handlers
   const handleManageStudentSubjects = async (studentId, studentName) => {
@@ -1565,15 +2052,12 @@ Type "DELETE" to confirm permanent deletion:`;
   const handleDeleteMessage = async (messageId) => {
     try {
       // Use server-side API to bypass RLS restrictions
+      const authToken = await getAuthToken();
       const response = await fetch(`${getApiBaseUrl()}/admin-delete-message`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${
-            (
-              await supabase.auth.getSession()
-            ).data.session?.access_token
-          }`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({ messageId }),
       });
@@ -1599,7 +2083,14 @@ Type "DELETE" to confirm permanent deletion:`;
   };
 
   if (loading) {
-    return <div className="loading">Loading admin dashboard...</div>;
+    return (
+      <LoadingIndicator
+        size="large"
+        variant="spinner"
+        message="Loading admin dashboard..."
+        fullScreen={true}
+      />
+    );
   }
 
   return (
@@ -1734,6 +2225,8 @@ Type "DELETE" to confirm permanent deletion:`;
         >
           <h1>🎓 Admin Dashboard</h1>
           <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+            <CacheStatus compact={true} />
+            <OfflineStatusBadge />
             <button
               onClick={() => setShowLogoutModal(true)}
               style={{
@@ -1751,6 +2244,21 @@ Type "DELETE" to confirm permanent deletion:`;
             </button>
           </div>
         </div>
+
+        {/* Offline Indicator - shows when offline or has queued operations */}
+        <OfflineIndicator
+          mode="full"
+          queueStatus={getQueueStatus()}
+          onRetry={async () => {
+            try {
+              await processQueue();
+              await fetchAllData();
+            } catch (error) {
+              console.error("Manual retry failed:", error);
+            }
+          }}
+        />
+
         <div className="stats-grid">
           <div className="stat-card pending">
             <h3>{stats.pendingApplications}</h3>
@@ -1771,71 +2279,138 @@ Type "DELETE" to confirm permanent deletion:`;
         </div>
       </div>
 
-      <div className="admin-tabs">
+      <nav
+        className="admin-tabs"
+        role="tablist"
+        aria-label="Admin Dashboard Navigation"
+      >
         <button
           className={activeTab === "applications" ? "active" : ""}
           onClick={() => setActiveTab("applications")}
+          onKeyDown={handleTabKeyDown}
           data-tab="applications"
+          role="tab"
+          aria-selected={activeTab === "applications"}
+          aria-controls="applications-panel"
+          tabIndex={activeTab === "applications" ? 0 : -1}
+          id="applications-tab"
         >
-          📝 Applications
+          <span aria-hidden="true">📝</span>
+          <span>Applications</span>
         </button>
         <button
           className={activeTab === "teachers" ? "active" : ""}
           onClick={() => setActiveTab("teachers")}
+          onKeyDown={handleTabKeyDown}
           data-tab="teachers"
+          role="tab"
+          aria-selected={activeTab === "teachers"}
+          aria-controls="teachers-panel"
+          tabIndex={activeTab === "teachers" ? 0 : -1}
+          id="teachers-tab"
         >
-          👩‍🏫 Teachers
+          <span aria-hidden="true">👩‍🏫</span>
+          <span>Teachers</span>
         </button>
         <button
           className={activeTab === "subjects" ? "active" : ""}
           onClick={() => setActiveTab("subjects")}
+          onKeyDown={handleTabKeyDown}
           data-tab="subjects"
+          role="tab"
+          aria-selected={activeTab === "subjects"}
+          aria-controls="subjects-panel"
+          tabIndex={activeTab === "subjects" ? 0 : -1}
+          id="subjects-tab"
         >
-          📚 Subjects
+          <span aria-hidden="true">📚</span>
+          <span>Subjects</span>
         </button>
         <button
           className={activeTab === "students" ? "active" : ""}
           onClick={() => setActiveTab("students")}
+          onKeyDown={handleTabKeyDown}
           data-tab="students"
+          role="tab"
+          aria-selected={activeTab === "students"}
+          aria-controls="students-panel"
+          tabIndex={activeTab === "students" ? 0 : -1}
+          id="students-tab"
         >
-          🎓 Students
+          <span aria-hidden="true">🎓</span>
+          <span>Students</span>
         </button>
         <button
           className={activeTab === "session-approvals" ? "active" : ""}
           onClick={() => setActiveTab("session-approvals")}
+          onKeyDown={handleTabKeyDown}
           data-tab="session-approvals"
+          role="tab"
+          aria-selected={activeTab === "session-approvals"}
+          aria-controls="session-approvals-panel"
+          tabIndex={activeTab === "session-approvals" ? 0 : -1}
+          id="session-approvals-tab"
         >
-          📅 Session Approvals ({pendingSessions.length})
+          <span aria-hidden="true">📅</span>
+          <span>Session Approvals ({pendingSessions.length})</span>
         </button>
         <button
           className={activeTab === "sessions" ? "active" : ""}
           onClick={() => setActiveTab("sessions")}
+          onKeyDown={handleTabKeyDown}
           data-tab="sessions"
+          role="tab"
+          aria-selected={activeTab === "sessions"}
+          aria-controls="sessions-panel"
+          tabIndex={activeTab === "sessions" ? 0 : -1}
+          id="sessions-tab"
         >
-          🗓️ Sessions Overview ({sessions.length})
+          <span aria-hidden="true">🗓️</span>
+          <span>Sessions Overview ({sessions.length})</span>
         </button>
         <button
           className={activeTab === "announcements" ? "active" : ""}
           onClick={() => setActiveTab("announcements")}
+          onKeyDown={handleTabKeyDown}
           data-tab="announcements"
+          role="tab"
+          aria-selected={activeTab === "announcements"}
+          aria-controls="announcements-panel"
+          tabIndex={activeTab === "announcements" ? 0 : -1}
+          id="announcements-tab"
         >
-          📢 Announcements
+          <span aria-hidden="true">📢</span>
+          <span>Announcements</span>
         </button>
         <button
           className={activeTab === "user-management" ? "active" : ""}
           onClick={() => setActiveTab("user-management")}
+          onKeyDown={handleTabKeyDown}
           data-tab="user-management"
+          role="tab"
+          aria-selected={activeTab === "user-management"}
+          aria-controls="user-management-panel"
+          tabIndex={activeTab === "user-management" ? 0 : -1}
+          id="user-management-tab"
         >
-          👥 User Management ({suspendedUsers.length})
+          <span aria-hidden="true">👥</span>
+          <span>User Management ({suspendedUsers.length})</span>
         </button>
         <button
           className={activeTab === "messages" ? "active" : ""}
           onClick={() => setActiveTab("messages")}
+          onKeyDown={handleTabKeyDown}
           data-tab="messages"
+          role="tab"
+          aria-selected={activeTab === "messages"}
+          aria-controls="messages-panel"
+          tabIndex={activeTab === "messages" ? 0 : -1}
+          id="messages-tab"
         >
-          📧 Messages ({messages.length})
+          <span aria-hidden="true">📧</span>
+          <span>Messages ({messages.length})</span>
         </button>
-      </div>
+      </nav>
 
       {showLogoutModal && (
         <div className="logout-modal-overlay">
@@ -2051,9 +2626,21 @@ Type "DELETE" to confirm permanent deletion:`;
 
       <div className="admin-content">
         {activeTab === "applications" && (
-          <div className="applications-section">
+          <div
+            className="applications-section"
+            role="tabpanel"
+            id="applications-panel"
+            aria-labelledby="applications-tab"
+            tabIndex={0}
+          >
             <h2>Student Applications</h2>
-            {applications.length === 0 ? (
+            {loadingStates.applications ? (
+              <LoadingIndicator
+                size="medium"
+                variant="skeleton"
+                message="Loading applications..."
+              />
+            ) : applications.length === 0 ? (
               <p>No applications found.</p>
             ) : (
               <div className="applications-grid">
@@ -2177,7 +2764,13 @@ Type "DELETE" to confirm permanent deletion:`;
         )}
 
         {activeTab === "teachers" && (
-          <div className="teachers-section">
+          <div
+            className="teachers-section"
+            role="tabpanel"
+            id="teachers-panel"
+            aria-labelledby="teachers-tab"
+            tabIndex={0}
+          >
             <div className="section-header">
               <h2>Teachers Management</h2>
               <button
@@ -2190,60 +2783,189 @@ Type "DELETE" to confirm permanent deletion:`;
 
             {showNewTeacherForm && (
               <div className="create-teacher-form collapsible-form">
-                <h3>Create New Teacher Account</h3>
-                <form onSubmit={handleCreateTeacher}>
+                <h3 id="create-teacher-title">Create New Teacher Account</h3>
+                <form
+                  onSubmit={handleCreateTeacher}
+                  aria-labelledby="create-teacher-title"
+                  noValidate
+                >
                   <div className="form-grid">
-                    <input
-                      type="email"
-                      placeholder="Email"
-                      value={newTeacher.email}
-                      onChange={(e) =>
-                        setNewTeacher({ ...newTeacher, email: e.target.value })
-                      }
-                      required
-                    />
-                    <input
-                      type="text"
-                      placeholder="Full Name"
-                      value={newTeacher.fullName}
-                      onChange={(e) =>
-                        setNewTeacher({
-                          ...newTeacher,
-                          fullName: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                    <input
-                      type="tel"
-                      placeholder="Phone"
-                      value={newTeacher.phone}
-                      onChange={(e) =>
-                        setNewTeacher({ ...newTeacher, phone: e.target.value })
-                      }
-                    />
-                    <input
-                      type="text"
-                      placeholder="Address"
-                      value={newTeacher.address}
-                      onChange={(e) =>
-                        setNewTeacher({
-                          ...newTeacher,
-                          address: e.target.value,
-                        })
-                      }
-                    />
+                    <div className="input-group">
+                      <label
+                        htmlFor="teacher-email"
+                        className="visually-hidden"
+                      >
+                        Email Address *
+                      </label>
+                      <input
+                        id="teacher-email"
+                        type="email"
+                        placeholder="Email"
+                        value={newTeacher.email}
+                        onChange={(e) =>
+                          handleTeacherInputChange("email", e.target.value)
+                        }
+                        className={teacherFormErrors.email ? "error" : ""}
+                        aria-invalid={
+                          teacherFormErrors.email ? "true" : "false"
+                        }
+                        aria-describedby={
+                          teacherFormErrors.email
+                            ? "teacher-email-error"
+                            : undefined
+                        }
+                        required
+                      />
+                      {teacherFormErrors.email && (
+                        <div
+                          id="teacher-email-error"
+                          className="validation-error"
+                          role="alert"
+                          aria-live="polite"
+                        >
+                          <span className="error-icon" aria-hidden="true">
+                            ⚠️
+                          </span>
+                          {teacherFormErrors.email[0]}
+                        </div>
+                      )}
+                    </div>
+                    <div className="input-group">
+                      <label
+                        htmlFor="teacher-fullname"
+                        className="visually-hidden"
+                      >
+                        Full Name *
+                      </label>
+                      <input
+                        id="teacher-fullname"
+                        type="text"
+                        placeholder="Full Name"
+                        value={newTeacher.fullName}
+                        onChange={(e) =>
+                          handleTeacherInputChange("fullName", e.target.value)
+                        }
+                        className={teacherFormErrors.fullName ? "error" : ""}
+                        aria-invalid={
+                          teacherFormErrors.fullName ? "true" : "false"
+                        }
+                        aria-describedby={
+                          teacherFormErrors.fullName
+                            ? "teacher-fullname-error"
+                            : undefined
+                        }
+                        required
+                      />
+                      {teacherFormErrors.fullName && (
+                        <div
+                          id="teacher-fullname-error"
+                          className="validation-error"
+                          role="alert"
+                          aria-live="polite"
+                        >
+                          <span className="error-icon" aria-hidden="true">
+                            ⚠️
+                          </span>
+                          {teacherFormErrors.fullName[0]}
+                        </div>
+                      )}
+                    </div>
+                    <div className="input-group">
+                      <label
+                        htmlFor="teacher-phone"
+                        className="visually-hidden"
+                      >
+                        Phone Number
+                      </label>
+                      <input
+                        id="teacher-phone"
+                        type="tel"
+                        placeholder="Phone"
+                        value={newTeacher.phone}
+                        onChange={(e) =>
+                          handleTeacherInputChange("phone", e.target.value)
+                        }
+                        className={teacherFormErrors.phone ? "error" : ""}
+                        aria-invalid={
+                          teacherFormErrors.phone ? "true" : "false"
+                        }
+                        aria-describedby={
+                          teacherFormErrors.phone
+                            ? "teacher-phone-error"
+                            : undefined
+                        }
+                      />
+                      {teacherFormErrors.phone && (
+                        <div
+                          id="teacher-phone-error"
+                          className="validation-error"
+                          role="alert"
+                          aria-live="polite"
+                        >
+                          <span className="error-icon" aria-hidden="true">
+                            ⚠️
+                          </span>
+                          {teacherFormErrors.phone[0]}
+                        </div>
+                      )}
+                    </div>
+                    <div className="input-group">
+                      <label
+                        htmlFor="teacher-address"
+                        className="visually-hidden"
+                      >
+                        Address
+                      </label>
+                      <input
+                        id="teacher-address"
+                        type="text"
+                        placeholder="Address"
+                        value={newTeacher.address}
+                        onChange={(e) =>
+                          handleTeacherInputChange("address", e.target.value)
+                        }
+                        className={teacherFormErrors.address ? "error" : ""}
+                        aria-invalid={
+                          teacherFormErrors.address ? "true" : "false"
+                        }
+                        aria-describedby={
+                          teacherFormErrors.address
+                            ? "teacher-address-error"
+                            : undefined
+                        }
+                      />
+                      {teacherFormErrors.address && (
+                        <div
+                          id="teacher-address-error"
+                          className="validation-error"
+                          role="alert"
+                          aria-live="polite"
+                        >
+                          <span className="error-icon" aria-hidden="true">
+                            ⚠️
+                          </span>
+                          {teacherFormErrors.address[0]}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Subject Assignment Section */}
                   <div className="subject-assignment-section">
-                    <h4>Assign Subjects (Optional)</h4>
-                    <div className="subjects-checkbox-grid">
+                    <h4 id="teacher-subjects-heading">
+                      Assign Subjects (Optional)
+                    </h4>
+                    <div
+                      className="subjects-checkbox-grid"
+                      role="group"
+                      aria-labelledby="teacher-subjects-heading"
+                    >
                       {subjects
                         .filter((subject) => !subject.teacher_id)
                         .map((subject) => (
                           <label key={subject.id} className="subject-checkbox">
                             <input
+                              id={`teacher-subject-${subject.id}`}
                               type="checkbox"
                               checked={newTeacher.assignedSubjects.includes(
                                 subject.id
@@ -2267,9 +2989,25 @@ Type "DELETE" to confirm permanent deletion:`;
                                   });
                                 }
                               }}
+                              aria-describedby={
+                                subject.description
+                                  ? `teacher-subject-${subject.id}-desc`
+                                  : undefined
+                              }
                             />
-                            <span className="checkmark"></span>
-                            {subject.name}
+                            <span
+                              className="checkmark"
+                              aria-hidden="true"
+                            ></span>
+                            <span className="subject-name">{subject.name}</span>
+                            {subject.description && (
+                              <span
+                                id={`teacher-subject-${subject.id}-desc`}
+                                className="subject-description visually-hidden"
+                              >
+                                {subject.description}
+                              </span>
+                            )}
                           </label>
                         ))}
                     </div>
@@ -2281,8 +3019,19 @@ Type "DELETE" to confirm permanent deletion:`;
                     )}
                   </div>
 
-                  <button type="submit" className="create-btn">
-                    Create Teacher Account
+                  <button
+                    type="submit"
+                    className="create-btn"
+                    disabled={loadingStates.creatingTeacher}
+                  >
+                    {loadingStates.creatingTeacher ? (
+                      <>
+                        <LoadingIndicator size="small" variant="dots" />
+                        Creating...
+                      </>
+                    ) : (
+                      "Create Teacher Account"
+                    )}
                   </button>
                 </form>
               </div>
@@ -2290,125 +3039,163 @@ Type "DELETE" to confirm permanent deletion:`;
 
             <div className="teachers-list">
               <h3>Current Teachers</h3>
-              <div className="teachers-grid">
-                {teachers.map((teacher) => (
-                  <div key={teacher.id} className="teacher-card">
-                    <div className="teacher-info">
-                      <div className="teacher-header">
-                        <h4>{teacher.full_name}</h4>
-                      </div>
-                      <p>
-                        <strong>Email:</strong> {teacher.email}
-                      </p>
-                      <p>
-                        <strong>Phone:</strong>{" "}
-                        {teacher.phone || "Not provided"}
-                      </p>
-                      <p>
-                        <strong>Status:</strong>{" "}
-                        <span className={`status ${teacher.status}`}>
-                          {teacher.status}
-                        </span>
-                      </p>
-                      <div className="assigned-subjects">
-                        <strong>Assigned Subjects:</strong>
-                        <div className="subject-tags">
-                          {teacher.teacher_subjects &&
-                          teacher.teacher_subjects.length > 0 ? (
-                            teacher.teacher_subjects.map((ts) => (
-                              <span key={ts.subject.id} className="subject-tag">
-                                {ts.subject.name}
+              {loadingStates.teachers ? (
+                <LoadingIndicator
+                  size="medium"
+                  variant="skeleton"
+                  message="Loading teachers..."
+                />
+              ) : (
+                <div className="teachers-grid">
+                  {teachers.map((teacher) => (
+                    <div key={teacher.id} className="teacher-card">
+                      <div className="teacher-info">
+                        <div className="teacher-header">
+                          <h4>{teacher.full_name}</h4>
+                        </div>
+                        <p>
+                          <strong>Email:</strong> {teacher.email}
+                        </p>
+                        <p>
+                          <strong>Phone:</strong>{" "}
+                          {teacher.phone || "Not provided"}
+                        </p>
+                        <p>
+                          <strong>Status:</strong>{" "}
+                          <span className={`status ${teacher.status}`}>
+                            {teacher.status}
+                          </span>
+                        </p>
+                        <div className="assigned-subjects">
+                          <strong>Assigned Subjects:</strong>
+                          <div className="subject-tags">
+                            {teacher.teacher_subjects &&
+                            teacher.teacher_subjects.length > 0 ? (
+                              teacher.teacher_subjects.map((ts) => (
+                                <span
+                                  key={ts.subject.id}
+                                  className="subject-tag"
+                                >
+                                  {ts.subject.name}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="no-subjects">
+                                No subjects assigned
                               </span>
-                            ))
+                            )}
+                          </div>
+                        </div>
+                        <p>
+                          <strong>Joined:</strong>{" "}
+                          {new Date(teacher.created_at).toLocaleDateString()}
+                        </p>
+
+                        {/* Action Buttons */}
+                        <div
+                          className="user-actions"
+                          role="group"
+                          aria-label={`Actions for ${teacher.full_name}`}
+                        >
+                          <button
+                            className="action-btn primary"
+                            onClick={() =>
+                              handleAssignSubjectsToTeacher(
+                                teacher.id,
+                                teacher.full_name
+                              )
+                            }
+                            title="Manage Subjects"
+                            aria-label={`Manage subjects for ${teacher.full_name}`}
+                          >
+                            <span aria-hidden="true">📚</span> Manage Subjects
+                          </button>
+
+                          {teacher.status === "active" ? (
+                            <button
+                              className="action-btn warning"
+                              onClick={() =>
+                                handleSuspendTeacher(
+                                  teacher.id,
+                                  teacher.full_name
+                                )
+                              }
+                              title="Suspend Teacher"
+                              aria-label={`Suspend teacher ${teacher.full_name}`}
+                            >
+                              <span aria-hidden="true">🚫</span> Suspend
+                            </button>
                           ) : (
-                            <span className="no-subjects">
-                              No subjects assigned
-                            </span>
+                            <button
+                              className="action-btn success"
+                              onClick={() =>
+                                handleUnsuspendStudent(
+                                  teacher.id,
+                                  teacher.full_name
+                                )
+                              }
+                              title="Unsuspend Teacher"
+                              aria-label={`Unsuspend teacher ${teacher.full_name}`}
+                            >
+                              <span aria-hidden="true">✅</span> Unsuspend
+                            </button>
                           )}
+
+                          <button
+                            className="action-btn danger"
+                            onClick={() =>
+                              handleDeleteTeacher(teacher.id, teacher.full_name)
+                            }
+                            title="Delete Teacher"
+                            aria-label={`Delete teacher ${teacher.full_name} permanently`}
+                            disabled={loadingStates.deletingUser}
+                          >
+                            {loadingStates.deletingUser ? (
+                              <>
+                                <LoadingIndicator size="small" variant="dots" />
+                                <span className="visually-hidden">
+                                  Deleting teacher...
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span aria-hidden="true">🗑️</span> Delete
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            className="action-btn info"
+                            onClick={() =>
+                              handleSendMessage(
+                                teacher.id,
+                                teacher.full_name,
+                                "teacher"
+                              )
+                            }
+                            title="Send Message"
+                            aria-label={`Send message to teacher ${teacher.full_name}`}
+                          >
+                            <span aria-hidden="true">📨</span> Message
+                          </button>
                         </div>
                       </div>
-                      <p>
-                        <strong>Joined:</strong>{" "}
-                        {new Date(teacher.created_at).toLocaleDateString()}
-                      </p>
-
-                      {/* Action Buttons */}
-                      <div className="user-actions">
-                        <button
-                          className="action-btn primary"
-                          onClick={() =>
-                            handleAssignSubjectsToTeacher(
-                              teacher.id,
-                              teacher.full_name
-                            )
-                          }
-                          title="Manage Subjects"
-                        >
-                          📚 Manage Subjects
-                        </button>
-
-                        {teacher.status === "active" ? (
-                          <button
-                            className="action-btn warning"
-                            onClick={() =>
-                              handleSuspendTeacher(
-                                teacher.id,
-                                teacher.full_name
-                              )
-                            }
-                            title="Suspend Teacher"
-                          >
-                            🚫 Suspend
-                          </button>
-                        ) : (
-                          <button
-                            className="action-btn success"
-                            onClick={() =>
-                              handleUnsuspendStudent(
-                                teacher.id,
-                                teacher.full_name
-                              )
-                            }
-                            title="Unsuspend Teacher"
-                          >
-                            ✅ Unsuspend
-                          </button>
-                        )}
-
-                        <button
-                          className="action-btn danger"
-                          onClick={() =>
-                            handleDeleteTeacher(teacher.id, teacher.full_name)
-                          }
-                          title="Delete Teacher"
-                        >
-                          🗑️ Delete
-                        </button>
-
-                        <button
-                          className="action-btn info"
-                          onClick={() =>
-                            handleSendMessage(
-                              teacher.id,
-                              teacher.full_name,
-                              "teacher"
-                            )
-                          }
-                          title="Send Message"
-                        >
-                          📨 Message
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {activeTab === "subjects" && (
-          <div className="subjects-section">
+          <div
+            className="subjects-section"
+            role="tabpanel"
+            id="subjects-panel"
+            aria-labelledby="subjects-tab"
+            tabIndex={0}
+          >
             <div className="section-header">
               <h2>Subjects Management</h2>
               <button
@@ -2421,45 +3208,89 @@ Type "DELETE" to confirm permanent deletion:`;
 
             {showNewSubjectForm && (
               <div className="create-subject-form collapsible-form">
-                <h3>Create New Subject</h3>
-                <form onSubmit={handleCreateSubject}>
-                  <input
-                    type="text"
-                    placeholder="Subject Name"
-                    value={newSubject.name}
-                    onChange={(e) =>
-                      setNewSubject({ ...newSubject, name: e.target.value })
-                    }
-                    required
-                  />
-                  <textarea
-                    placeholder="Subject Description"
-                    value={newSubject.description}
-                    onChange={(e) =>
-                      setNewSubject({
-                        ...newSubject,
-                        description: e.target.value,
-                      })
-                    }
-                    rows="3"
-                  />
-                  <select
-                    value={newSubject.teacherId}
-                    onChange={(e) =>
-                      setNewSubject({
-                        ...newSubject,
-                        teacherId: e.target.value,
-                      })
-                    }
+                <h3 id="create-subject-title">Create New Subject</h3>
+                <form
+                  onSubmit={handleCreateSubject}
+                  aria-labelledby="create-subject-title"
+                  noValidate
+                >
+                  <div>
+                    <label htmlFor="subject-name" className="visually-hidden">
+                      Subject Name *
+                    </label>
+                    <input
+                      id="subject-name"
+                      type="text"
+                      placeholder="Subject Name"
+                      value={newSubject.name}
+                      onChange={(e) =>
+                        setNewSubject({ ...newSubject, name: e.target.value })
+                      }
+                      required
+                      aria-required="true"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="subject-description"
+                      className="visually-hidden"
+                    >
+                      Subject Description
+                    </label>
+                    <textarea
+                      id="subject-description"
+                      placeholder="Subject Description"
+                      value={newSubject.description}
+                      onChange={(e) =>
+                        setNewSubject({
+                          ...newSubject,
+                          description: e.target.value,
+                        })
+                      }
+                      rows="3"
+                      aria-describedby="subject-description-hint"
+                    />
+                    <div
+                      id="subject-description-hint"
+                      className="visually-hidden"
+                    >
+                      Optional description for the subject
+                    </div>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="subject-teacher"
+                      className="visually-hidden"
+                    >
+                      Assign Teacher
+                    </label>
+                    <select
+                      id="subject-teacher"
+                      value={newSubject.teacherId}
+                      onChange={(e) =>
+                        setNewSubject({
+                          ...newSubject,
+                          teacherId: e.target.value,
+                        })
+                      }
+                      aria-describedby="subject-teacher-hint"
+                    >
+                      <option value="">Assign Teacher (Optional)</option>
+                      {teachers.map((teacher) => (
+                        <option key={teacher.id} value={teacher.id}>
+                          {teacher.full_name}
+                        </option>
+                      ))}
+                    </select>
+                    <div id="subject-teacher-hint" className="visually-hidden">
+                      Optional teacher assignment for this subject
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="create-btn"
+                    aria-describedby="create-subject-title"
                   >
-                    <option value="">Assign Teacher (Optional)</option>
-                    {teachers.map((teacher) => (
-                      <option key={teacher.id} value={teacher.id}>
-                        {teacher.full_name}
-                      </option>
-                    ))}
-                  </select>
-                  <button type="submit" className="create-btn">
                     Create Subject
                   </button>
                 </form>
@@ -2468,80 +3299,99 @@ Type "DELETE" to confirm permanent deletion:`;
 
             <div className="subjects-list">
               <h3>Current Subjects</h3>
-              <div className="subjects-grid improved-grid">
-                {subjects.map((subject) => (
-                  <div key={subject.id} className="subject-card enhanced-card">
-                    <div className="subject-header">
-                      <div className="subject-title-section">
-                        <h4>{subject.name}</h4>
-                        <span
-                          className={`status-badge status-${subject.status}`}
-                        >
-                          {subject.status}
-                        </span>
-                      </div>
-                      <div className="subject-actions">
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={() => handleAssignMultipleTeachers(subject)}
-                          title="Assign Multiple Teachers"
-                        >
-                          👥 Teachers
-                        </button>
-                        <button
-                          className="btn btn-sm btn-secondary"
-                          onClick={() => handleEditSubject(subject)}
-                          title="Edit Subject"
-                        >
-                          ✏️ Edit
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="subject-content">
-                      <p className="subject-description">
-                        {subject.description}
-                      </p>
-
-                      <div className="subject-teachers">
-                        <strong>Teachers:</strong>
-                        <div className="teacher-list">
-                          {subject.teacher?.full_name ? (
-                            <span className="teacher-badge primary">
-                              {subject.teacher.full_name}
-                            </span>
-                          ) : (
-                            <span className="no-teacher">
-                              No teacher assigned
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="subject-stats">
-                        <div className="stat-item">
-                          <span className="stat-label">Students:</span>
-                          <span className="stat-value">
-                            {subjectStats[subject.id]?.studentCount || 0}
+              {loadingStates.subjects ? (
+                <LoadingIndicator
+                  size="medium"
+                  variant="skeleton"
+                  message="Loading subjects..."
+                />
+              ) : (
+                <div className="subjects-grid improved-grid">
+                  {subjects.map((subject) => (
+                    <div
+                      key={subject.id}
+                      className="subject-card enhanced-card"
+                    >
+                      <div className="subject-header">
+                        <div className="subject-title-section">
+                          <h4>{subject.name}</h4>
+                          <span
+                            className={`status-badge status-${subject.status}`}
+                          >
+                            {subject.status}
                           </span>
                         </div>
-                        <div className="stat-item">
-                          <span className="stat-label">Assignments:</span>
-                          <span className="stat-value">
-                            {subjectStats[subject.id]?.assignmentCount || 0}
-                          </span>
+                        <div className="subject-actions">
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() =>
+                              handleAssignMultipleTeachers(subject)
+                            }
+                            title="Assign Multiple Teachers"
+                          >
+                            👥 Teachers
+                          </button>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => handleEditSubject(subject)}
+                            title="Edit Subject"
+                          >
+                            ✏️ Edit
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="subject-content">
+                        <p className="subject-description">
+                          {subject.description}
+                        </p>
+
+                        <div className="subject-teachers">
+                          <strong>Teachers:</strong>
+                          <div className="teacher-list">
+                            {subject.teacher?.full_name ? (
+                              <span className="teacher-badge primary">
+                                {subject.teacher.full_name}
+                              </span>
+                            ) : (
+                              <span className="no-teacher">
+                                No teacher assigned
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="subject-stats">
+                          <div className="stat-item">
+                            <span className="stat-label">Students:</span>
+                            <span className="stat-value">
+                              {subjectStats[subject.id]?.studentCount || 0}
+                            </span>
+                          </div>
+                          <div className="stat-item">
+                            <span className="stat-label">Assignments:</span>
+                            <span className="stat-value">
+                              {subjectStats[subject.id]?.assignmentCount || 0}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {activeTab === "students" && (
-          <div className="students-section">
+          <div
+            className="students-section"
+            role="tabpanel"
+            id="students-panel"
+            aria-labelledby="students-tab"
+            tabIndex={0}
+          >
             <div className="section-header">
               <h2>Student Management</h2>
               <div className="stats-summary">
@@ -2556,122 +3406,140 @@ Type "DELETE" to confirm permanent deletion:`;
               </div>
             </div>
 
-            <div className="students-grid">
-              {students.map((student) => (
-                <div key={student.id} className="student-card">
-                  <div className="student-info">
-                    <div className="student-header">
-                      <h4>{student.full_name}</h4>
-                    </div>
-                    <p>
-                      <strong>Email:</strong> {student.email}
-                    </p>
-                    <p>
-                      <strong>Phone:</strong> {student.phone || "Not provided"}
-                    </p>
-                    <p>
-                      <strong>Status:</strong>{" "}
-                      <span className={`status ${student.status}`}>
-                        {student.status}
-                      </span>
-                    </p>
-                    <div className="enrolled-subjects">
-                      <strong>Enrolled Subjects:</strong>
-                      {student.student_subjects?.length > 0 ? (
-                        student.student_subjects.map((enrollment, index) => (
-                          <span key={index} className="subject-tag small">
-                            {enrollment.subjects.name}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="no-subjects">
-                          No subjects enrolled
+            {loadingStates.students ? (
+              <LoadingIndicator
+                size="medium"
+                variant="skeleton"
+                message="Loading students..."
+              />
+            ) : (
+              <div className="students-grid">
+                {students.map((student) => (
+                  <div key={student.id} className="student-card">
+                    <div className="student-info">
+                      <div className="student-header">
+                        <h4>{student.full_name}</h4>
+                      </div>
+                      <p>
+                        <strong>Email:</strong> {student.email}
+                      </p>
+                      <p>
+                        <strong>Phone:</strong>{" "}
+                        {student.phone || "Not provided"}
+                      </p>
+                      <p>
+                        <strong>Status:</strong>{" "}
+                        <span className={`status ${student.status}`}>
+                          {student.status}
                         </span>
-                      )}
-                    </div>
-                    <p>
-                      <strong>Joined:</strong>{" "}
-                      {new Date(student.created_at).toLocaleDateString()}
-                    </p>
+                      </p>
+                      <div className="enrolled-subjects">
+                        <strong>Enrolled Subjects:</strong>
+                        {student.student_subjects?.length > 0 ? (
+                          student.student_subjects.map((enrollment, index) => (
+                            <span key={index} className="subject-tag small">
+                              {enrollment.subjects.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="no-subjects">
+                            No subjects enrolled
+                          </span>
+                        )}
+                      </div>
+                      <p>
+                        <strong>Joined:</strong>{" "}
+                        {new Date(student.created_at).toLocaleDateString()}
+                      </p>
 
-                    {/* Action Buttons */}
-                    <div className="user-actions">
-                      <button
-                        className="action-btn primary"
-                        onClick={() =>
-                          handleManageStudentSubjects(
-                            student.id,
-                            student.full_name
-                          )
-                        }
-                        title="Manage Subjects"
-                      >
-                        📚 Manage Subjects
-                      </button>
-
-                      {student.status === "active" ? (
+                      {/* Action Buttons */}
+                      <div className="user-actions">
                         <button
-                          className="action-btn warning"
+                          className="action-btn primary"
                           onClick={() =>
-                            handleSuspendStudent(student.id, student.full_name)
-                          }
-                          title="Suspend Student"
-                        >
-                          🚫 Suspend
-                        </button>
-                      ) : (
-                        <button
-                          className="action-btn success"
-                          onClick={() =>
-                            handleUnsuspendStudent(
+                            handleManageStudentSubjects(
                               student.id,
                               student.full_name
                             )
                           }
-                          title="Unsuspend Student"
+                          title="Manage Subjects"
                         >
-                          ✅ Unsuspend
+                          📚 Manage Subjects
                         </button>
-                      )}
 
-                      <button
-                        className="action-btn danger"
-                        onClick={() =>
-                          handleDeleteStudent(student.id, student.full_name)
-                        }
-                        title="Delete Student"
-                      >
-                        🗑️ Delete
-                      </button>
+                        {student.status === "active" ? (
+                          <button
+                            className="action-btn warning"
+                            onClick={() =>
+                              handleSuspendStudent(
+                                student.id,
+                                student.full_name
+                              )
+                            }
+                            title="Suspend Student"
+                          >
+                            🚫 Suspend
+                          </button>
+                        ) : (
+                          <button
+                            className="action-btn success"
+                            onClick={() =>
+                              handleUnsuspendStudent(
+                                student.id,
+                                student.full_name
+                              )
+                            }
+                            title="Unsuspend Student"
+                          >
+                            ✅ Unsuspend
+                          </button>
+                        )}
 
-                      <button
-                        className="action-btn info"
-                        onClick={() =>
-                          handleSendMessage(
-                            student.id,
-                            student.full_name,
-                            "student"
-                          )
-                        }
-                        title="Send Message"
-                      >
-                        📨 Message
-                      </button>
+                        <button
+                          className="action-btn danger"
+                          onClick={() =>
+                            handleDeleteStudent(student.id, student.full_name)
+                          }
+                          title="Delete Student"
+                        >
+                          🗑️ Delete
+                        </button>
+
+                        <button
+                          className="action-btn info"
+                          onClick={() =>
+                            handleSendMessage(
+                              student.id,
+                              student.full_name,
+                              "student"
+                            )
+                          }
+                          title="Send Message"
+                        >
+                          📨 Message
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {students.length === 0 && (
-                <div className="no-data">
-                  <p>No students found.</p>
-                </div>
-              )}
-            </div>
+                ))}
+                {students.length === 0 && (
+                  <div className="no-data">
+                    <p>No students found.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === "session-approvals" && (
-          <div className="session-approvals-section">
+          <div
+            className="session-approvals-section"
+            role="tabpanel"
+            id="session-approvals-panel"
+            aria-labelledby="session-approvals-tab"
+            tabIndex={0}
+          >
             <div className="section-header">
               <h2>Session Approval Requests</h2>
               <p>Review and approve session requests from teachers</p>
@@ -2748,7 +3616,13 @@ Type "DELETE" to confirm permanent deletion:`;
         )}
 
         {activeTab === "sessions" && (
-          <div className="sessions-section">
+          <div
+            className="sessions-section"
+            role="tabpanel"
+            id="sessions-panel"
+            aria-labelledby="sessions-tab"
+            tabIndex={0}
+          >
             <div className="section-header">
               <h2>Sessions Overview</h2>
               <p>Manage all teacher sessions and cancellations</p>
@@ -2903,7 +3777,13 @@ Type "DELETE" to confirm permanent deletion:`;
         )}
 
         {activeTab === "announcements" && (
-          <div className="announcements-section">
+          <div
+            className="announcements-section"
+            role="tabpanel"
+            id="announcements-panel"
+            aria-labelledby="announcements-tab"
+            tabIndex={0}
+          >
             <div className="section-header">
               <h2>Announcements Management</h2>
               <button
@@ -2918,62 +3798,122 @@ Type "DELETE" to confirm permanent deletion:`;
 
             {showNewAnnouncementForm && (
               <div className="create-announcement-form collapsible-form">
-                <h3>Create New Announcement</h3>
-                <form onSubmit={handleCreateAnnouncement}>
-                  <input
-                    type="text"
-                    placeholder="Announcement Title"
-                    value={newAnnouncement.title}
-                    onChange={(e) =>
-                      setNewAnnouncement({
-                        ...newAnnouncement,
-                        title: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                  <textarea
-                    placeholder="Announcement Content"
-                    value={newAnnouncement.content}
-                    onChange={(e) =>
-                      setNewAnnouncement({
-                        ...newAnnouncement,
-                        content: e.target.value,
-                      })
-                    }
-                    rows="4"
-                    required
-                  />
-                  <div className="form-row">
-                    <select
-                      value={newAnnouncement.targetAudience}
+                <h3 id="create-announcement-title">Create New Announcement</h3>
+                <form
+                  onSubmit={handleCreateAnnouncement}
+                  aria-labelledby="create-announcement-title"
+                  noValidate
+                >
+                  <div>
+                    <label
+                      htmlFor="announcement-title"
+                      className="visually-hidden"
+                    >
+                      Announcement Title *
+                    </label>
+                    <input
+                      id="announcement-title"
+                      type="text"
+                      placeholder="Announcement Title"
+                      value={newAnnouncement.title}
                       onChange={(e) =>
                         setNewAnnouncement({
                           ...newAnnouncement,
-                          targetAudience: e.target.value,
+                          title: e.target.value,
                         })
                       }
-                    >
-                      <option value="all">All Users</option>
-                      <option value="students">Students Only</option>
-                      <option value="teachers">Teachers Only</option>
-                    </select>
-                    <select
-                      value={newAnnouncement.priority}
-                      onChange={(e) =>
-                        setNewAnnouncement({
-                          ...newAnnouncement,
-                          priority: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="low">Low Priority</option>
-                      <option value="normal">Normal Priority</option>
-                      <option value="high">High Priority</option>
-                      <option value="urgent">Urgent</option>
-                    </select>
+                      required
+                      aria-required="true"
+                    />
                   </div>
-                  <button type="submit" className="create-btn">
+                  <div>
+                    <label
+                      htmlFor="announcement-content"
+                      className="visually-hidden"
+                    >
+                      Announcement Content *
+                    </label>
+                    <textarea
+                      id="announcement-content"
+                      placeholder="Announcement Content"
+                      value={newAnnouncement.content}
+                      onChange={(e) =>
+                        setNewAnnouncement({
+                          ...newAnnouncement,
+                          content: e.target.value,
+                        })
+                      }
+                      rows="4"
+                      required
+                      aria-required="true"
+                    />
+                  </div>
+                  <div className="form-row">
+                    <div>
+                      <label
+                        htmlFor="announcement-audience"
+                        className="visually-hidden"
+                      >
+                        Target Audience
+                      </label>
+                      <select
+                        id="announcement-audience"
+                        value={newAnnouncement.targetAudience}
+                        onChange={(e) =>
+                          setNewAnnouncement({
+                            ...newAnnouncement,
+                            targetAudience: e.target.value,
+                          })
+                        }
+                        aria-describedby="announcement-audience-hint"
+                      >
+                        <option value="all">All Users</option>
+                        <option value="students">Students Only</option>
+                        <option value="teachers">Teachers Only</option>
+                      </select>
+                      <div
+                        id="announcement-audience-hint"
+                        className="visually-hidden"
+                      >
+                        Choose who should see this announcement
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="announcement-priority"
+                        className="visually-hidden"
+                      >
+                        Priority Level
+                      </label>
+                      <select
+                        id="announcement-priority"
+                        value={newAnnouncement.priority}
+                        onChange={(e) =>
+                          setNewAnnouncement({
+                            ...newAnnouncement,
+                            priority: e.target.value,
+                          })
+                        }
+                        aria-describedby="announcement-priority-hint"
+                      >
+                        <option value="low">Low Priority</option>
+                        <option value="normal">Normal Priority</option>
+                        <option value="high">High Priority</option>
+                        <option value="urgent">Urgent</option>
+                      </select>
+                      <div
+                        id="announcement-priority-hint"
+                        className="visually-hidden"
+                      >
+                        Set the importance level of this announcement
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="create-btn"
+                    aria-describedby="create-announcement-title"
+                  >
                     Create Announcement
                   </button>
                 </form>
@@ -3042,7 +3982,13 @@ Type "DELETE" to confirm permanent deletion:`;
 
         {/* User Management Tab */}
         {activeTab === "user-management" && (
-          <div className="user-management-section">
+          <div
+            className="user-management-section"
+            role="tabpanel"
+            id="user-management-panel"
+            aria-labelledby="user-management-tab"
+            tabIndex={0}
+          >
             <div className="section-header">
               <h2>User Management</h2>
               <p>Manage suspended users and their status</p>
@@ -3143,7 +4089,13 @@ Type "DELETE" to confirm permanent deletion:`;
 
         {/* Messages Tab */}
         {activeTab === "messages" && (
-          <div className="messages-section">
+          <div
+            className="messages-section"
+            role="tabpanel"
+            id="messages-panel"
+            aria-labelledby="messages-tab"
+            tabIndex={0}
+          >
             <div className="section-header">
               <h2>Sent Messages</h2>
               <p>View and manage all messages sent to users</p>
@@ -3235,10 +4187,18 @@ Type "DELETE" to confirm permanent deletion:`;
 
       {/* Subject Assignment Modal */}
       {showSubjectAssignModal && (
-        <div className="modal-overlay">
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="subject-modal-title"
+          aria-describedby="subject-modal-description"
+        >
           <div className="modal-content subject-assign-modal">
             <div className="modal-header">
-              <h3>Manage Subjects for {selectedTeacher?.name}</h3>
+              <h3 id="subject-modal-title">
+                Manage Subjects for {selectedTeacher?.name}
+              </h3>
               <button
                 className="close-btn"
                 onClick={() => {
@@ -3246,19 +4206,25 @@ Type "DELETE" to confirm permanent deletion:`;
                   setSelectedTeacher(null);
                   setTeacherSubjects([]);
                 }}
+                aria-label="Close subject assignment modal"
+                autoFocus
               >
-                ✕
+                <span aria-hidden="true">✕</span>
               </button>
             </div>
 
             <div className="modal-body">
-              <p className="modal-description">
+              <p id="subject-modal-description" className="modal-description">
                 Select the subjects you want to assign to this teacher. They
                 will be responsible for creating assignments and managing
                 students in these subjects.
               </p>
 
-              <div className="subjects-selection-grid">
+              <div
+                className="subjects-selection-grid"
+                role="group"
+                aria-labelledby="subject-modal-title"
+              >
                 {subjects.map((subject) => {
                   const isCurrentlyAssigned = teacherSubjects.includes(
                     subject.id
