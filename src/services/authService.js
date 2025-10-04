@@ -196,25 +196,37 @@ class AuthService {
         console.log('[AuthService] handleSignIn called with session:', !!session?.user);
         if (session?.user) {
             console.log('[AuthService] Verifying profile for user:', session.user.id);
-            const profile = await this.verifyProfile(session.user.id);
-            console.log('[AuthService] Profile verification result:', !!profile, profile?.role);
-            if (profile) {
-                console.log('[AuthService] Updating state with authenticated user');
-                this.updateState({
-                    user: session.user,
-                    profile,
-                    loading: false,
-                    error: null
-                });
-                console.log('[AuthService] State updated successfully');
-            } else {
-                console.log('[AuthService] No profile found, signing out');
-                await supabase.auth.signOut();
+
+            try {
+                const profile = await this.verifyProfile(session.user.id);
+                console.log('[AuthService] Profile verification result:', !!profile, profile?.role);
+
+                if (profile) {
+                    console.log('[AuthService] Updating state with authenticated user');
+                    this.updateState({
+                        user: session.user,
+                        profile,
+                        loading: false,
+                        error: null
+                    });
+                    console.log('[AuthService] State updated successfully');
+                } else {
+                    console.log('[AuthService] No profile found, signing out');
+                    await supabase.auth.signOut();
+                    this.updateState({
+                        user: null,
+                        profile: null,
+                        loading: false,
+                        error: 'Account has been removed by administrator'
+                    });
+                }
+            } catch (error) {
+                console.error('[AuthService] Profile verification failed:', error);
                 this.updateState({
                     user: null,
                     profile: null,
                     loading: false,
-                    error: 'Account has been removed by administrator'
+                    error: 'Profile verification failed. Please try again.'
                 });
             }
         }
@@ -269,14 +281,28 @@ class AuthService {
      */
     async verifyProfile(userId) {
         console.log('[AuthService] verifyProfile called for userId:', userId);
+
         try {
-            const { data: profile, error } = await supabase
+            // Add timeout to prevent hanging queries
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Profile query timeout')), 10000);
+            });
+
+            const queryPromise = supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', userId)
                 .single();
 
-            console.log('[AuthService] Profile query result:', { profile: !!profile, error: !!error, errorCode: error?.code });
+            console.log('[AuthService] Executing profile query with timeout...');
+            const { data: profile, error } = await Promise.race([queryPromise, timeoutPromise]);
+
+            console.log('[AuthService] Profile query result:', {
+                profile: !!profile,
+                error: !!error,
+                errorCode: error?.code,
+                errorMessage: error?.message
+            });
 
             if (error) {
                 if (error.code === 'PGRST116') {
@@ -287,10 +313,35 @@ class AuthService {
                 throw error;
             }
 
+            if (!profile) {
+                console.log('[AuthService] No profile data returned');
+                return null;
+            }
+
             console.log('[AuthService] Profile found:', { id: profile.id, role: profile.role });
             return profile;
         } catch (error) {
             console.error('[AuthService] Profile verification error:', error);
+
+            // If it's a timeout, try creating a basic profile
+            if (error.message === 'Profile query timeout') {
+                console.log('[AuthService] Query timeout - attempting profile creation fallback');
+                try {
+                    const { data: newProfile, error: createError } = await supabase
+                        .from('profiles')
+                        .insert([{ id: userId, role: 'student' }])
+                        .select()
+                        .single();
+
+                    if (!createError && newProfile) {
+                        console.log('[AuthService] Created fallback profile:', newProfile);
+                        return newProfile;
+                    }
+                } catch (createErr) {
+                    console.error('[AuthService] Fallback profile creation failed:', createErr);
+                }
+            }
+
             return null;
         }
     }
