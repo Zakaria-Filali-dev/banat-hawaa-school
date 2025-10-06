@@ -10,7 +10,8 @@ import AuthCallback from "./pages/auth/AuthCallback.jsx";
 import SetPassword from "./pages/auth/set-password.jsx";
 import SetupPassword from "./pages/setup-password.jsx";
 import { useEffect, useState } from "react";
-import { supabase } from "./services/supabaseClient";
+import { supabase, authUtils } from "./services/supabaseClient";
+import { authDebugger } from "./utils/authDebugger";
 
 // Auth Error Handler Component
 function AuthErrorHandler({ error }) {
@@ -174,9 +175,35 @@ function ProtectedRoute({ children, allowedRoles }) {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [profileRetryCount, setProfileRetryCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
     let isMounted = true;
+
+    // Enable auth debugging in development
+    if (import.meta.env.DEV) {
+      authDebugger.enableAuthMonitoring();
+    }
+
+    // Monitor online/offline status
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (import.meta.env.DEV) {
+        console.log("🔄 [Auth] Network back online, testing connection...");
+        authDebugger.testConnection();
+      }
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      if (import.meta.env.DEV) {
+        console.log("📵 [Auth] Network offline detected");
+      }
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     // Set up auth state listener for real-time session monitoring
     const {
@@ -193,27 +220,36 @@ function ProtectedRoute({ children, allowedRoles }) {
       }
 
       if (event === "SIGNED_IN" && session) {
-        // User signed in, verify their profile still exists
+        // User signed in, verify their profile still exists with timeout protection
         try {
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", session.user.id)
-            .single();
+          const { data: profile, error: profileError } =
+            await authUtils.fetchProfileWithTimeout(session.user.id, 10000);
 
-          if (profileError?.code === "PGRST116") {
-            setError("Your account has been removed by an administrator.");
-            await supabase.auth.signOut();
-            return;
+          if (profileError) {
+            if (profileError.message === "Profile fetch timeout") {
+              // Don't log out on timeout, just show offline message
+              console.warn(
+                "[AuthContext] Profile fetch timeout during auth state change"
+              );
+              return;
+            }
+
+            if (profileError.code === "PGRST116") {
+              setError("Your account has been removed by an administrator.");
+              await supabase.auth.signOut();
+              return;
+            }
           }
 
           if (profile?.role) {
             setUser(session.user);
             setRole(profile.role);
             setError(null);
+            setProfileRetryCount(0);
           }
         } catch (err) {
-          console.error("Profile verification error:", err);
+          console.error("[AuthContext] Profile verification error:", err);
+          // Don't set error state for timeouts during auth state changes
         }
       }
     });
@@ -231,33 +267,99 @@ function ProtectedRoute({ children, allowedRoles }) {
           return;
         }
         if (isMounted) setUser(data.user);
-        // Fetch role from profiles table using user ID for more reliable lookup
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", data.user.id)
-          .single();
 
-        if (profileError) {
-          // Check if profile doesn't exist (account deleted)
-          if (
-            profileError.code === "PGRST116" ||
-            profileError.message?.includes("No rows found")
-          ) {
-            if (isMounted)
-              setError("Your account has been removed by an administrator.");
-          } else {
-            throw profileError;
+        // Fetch role from profiles table with timeout protection and retry logic
+        try {
+          const { data: profile, error: profileError } =
+            await authUtils.fetchProfileWithTimeout(data.user.id, 12000);
+
+          if (profileError) {
+            if (profileError.message === "Profile fetch timeout") {
+              console.warn(
+                "[AuthContext] Unexpected error during profile fetch: Error: Profile fetch timeout"
+              );
+
+              // Run diagnostics in development mode
+              if (import.meta.env.DEV) {
+                authDebugger
+                  .runDiagnostics(data.user.id)
+                  .then((diagnostics) => {
+                    console.log(
+                      "🏥 [Auth] Auto-diagnostics after timeout:",
+                      diagnostics
+                    );
+                  });
+              }
+
+              // Retry logic for timeouts (up to 2 times)
+              if (profileRetryCount < 2 && isMounted) {
+                setProfileRetryCount((prev) => prev + 1);
+                console.log(
+                  `🔄 [Auth] Retrying profile fetch (attempt ${
+                    profileRetryCount + 1
+                  }/2)`
+                );
+                // Retry after a short delay
+                setTimeout(() => {
+                  if (isMounted) {
+                    getUser();
+                  }
+                }, 2000);
+                return;
+              }
+
+              // After max retries, continue with cached user but show offline indicator
+              if (isMounted) {
+                setLoading(false);
+                // Don't set error - let user continue with existing session
+                return;
+              }
+            }
+
+            // Check if profile doesn't exist (account deleted)
+            if (
+              profileError.code === "PGRST116" ||
+              profileError.message?.includes("No rows found")
+            ) {
+              if (isMounted)
+                setError("Your account has been removed by an administrator.");
+            } else {
+              throw profileError;
+            }
+            return;
           }
+
+          if (!profile?.role) {
+            if (isMounted) setError("Your account access has been revoked.");
+            return;
+          }
+
+          if (isMounted) {
+            setRole(profile.role);
+            setProfileRetryCount(0);
+          }
+        } catch (profileErr) {
+          console.error(
+            "[AuthContext] Profile fetch error during getUser:",
+            profileErr
+          );
+
+          // For profile fetch timeout, don't set error state if we have an existing user session
+          if (profileErr.message === "Profile fetch timeout" && data?.user) {
+            console.warn(
+              "[AuthContext] Profile fetch timeout, maintaining existing session"
+            );
+            if (isMounted) setLoading(false);
+            return;
+          }
+
+          // For other profile errors, handle normally
+          if (isMounted)
+            setError(
+              "Profile verification failed. Please try logging in again."
+            );
           return;
         }
-
-        if (!profile?.role) {
-          if (isMounted) setError("Your account access has been revoked.");
-          return;
-        }
-
-        if (isMounted) setRole(profile.role);
       } catch (err) {
         if (isMounted) {
           // Provide specific error messages based on the error
@@ -283,16 +385,73 @@ function ProtectedRoute({ children, allowedRoles }) {
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [profileRetryCount]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+          flexDirection: "column",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+        }}
+      >
+        <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>⏳</div>
+        <div>Loading your account...</div>
+        {!isOnline && (
+          <div
+            style={{
+              marginTop: "1rem",
+              padding: "10px 20px",
+              background: "rgba(255, 165, 0, 0.2)",
+              borderRadius: "8px",
+              fontSize: "0.9rem",
+            }}
+          >
+            🌐 You appear to be offline
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (error) return <AuthErrorHandler error={error} />;
   if (!user) return <Navigate to="/login" replace />;
   if (allowedRoles && !allowedRoles.includes(role)) {
     return <Navigate to="/login" replace />;
   }
-  return children;
+
+  // Show offline indicator if user is authenticated but offline
+  return (
+    <div>
+      {!isOnline && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            background: "rgba(255, 165, 0, 0.9)",
+            color: "white",
+            textAlign: "center",
+            padding: "8px",
+            fontSize: "14px",
+            zIndex: 1000,
+          }}
+        >
+          🌐 You're currently offline. Some features may not work properly.
+        </div>
+      )}
+      <div style={{ paddingTop: !isOnline ? "40px" : "0" }}>{children}</div>
+    </div>
+  );
 }
 
 function App() {

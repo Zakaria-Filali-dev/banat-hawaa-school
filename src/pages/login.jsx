@@ -1,51 +1,121 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
+import { authUtils } from "../services/supabaseClient";
+import { authDebugger } from "../utils/authDebugger";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState("checking");
+  const [timeoutPhase, setTimeoutPhase] = useState(null);
   const navigate = useNavigate();
+
+  // Check connection status on component mount
+  useEffect(() => {
+    const checkConnection = async () => {
+      const isOnline = await authUtils.checkConnection();
+      setConnectionStatus(isOnline ? "online" : "offline");
+    };
+    checkConnection();
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setErrorMsg("");
     setLoading(true);
+    setTimeoutPhase(null);
+
+    // Run pre-login diagnostics in development
+    if (import.meta.env.DEV) {
+      console.log("🔐 [Login] Starting login process...");
+      authDebugger.testConnection();
+    }
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Check connection before attempting login
+      const isConnected = await authUtils.checkConnection();
+      if (!isConnected) {
+        setConnectionStatus("offline");
+        setTimeoutPhase("connection_failed");
+
+        if (import.meta.env.DEV) {
+          console.error("🌐 [Login] Connection failed, running diagnostics...");
+          authDebugger.runDiagnostics();
+        }
+
+        // Auto-refresh after showing offline message
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+        return;
+      }
+
+      setConnectionStatus("online");
+      setTimeoutPhase("authenticating");
+
+      // Use enhanced login with timeout
+      const { data, error } = await authUtils.signInWithTimeout(
         email,
-        password,
-      });
+        password
+      );
 
       if (error) {
-        setErrorMsg(error.message);
-        setLoading(false);
+        if (error.message === "Login timeout") {
+          setTimeoutPhase("login_timeout");
+
+          if (import.meta.env.DEV) {
+            console.error(
+              "⏰ [Login] Login timeout detected, running diagnostics..."
+            );
+            authDebugger.runDiagnostics().then((diagnostics) => {
+              console.log("🏥 [Login] Timeout diagnostics:", diagnostics);
+            });
+          }
+
+          // Auto-refresh after 2 seconds
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+          return;
+        }
+
+        // For other errors, also refresh instead of showing red text
+        setTimeoutPhase("login_failed");
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
         return;
       }
 
       if (!data?.user) {
-        setErrorMsg("Login failed. Please try again.");
-        setLoading(false);
+        setTimeoutPhase("login_failed");
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
         return;
       }
 
-      // Fetch user role for redirect
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", data.user.id)
-        .single();
+      setTimeoutPhase("fetching_profile");
+
+      // Fetch user role for redirect with timeout protection
+      const { data: profile, error: profileError } =
+        await authUtils.fetchProfileWithTimeout(data.user.id);
 
       if (profileError) {
-        setErrorMsg("Profile lookup failed. Please try again.");
-        setLoading(false);
+        if (profileError.message === "Profile fetch timeout") {
+          setTimeoutPhase("profile_timeout");
+        } else {
+          setTimeoutPhase("profile_failed");
+        }
+
+        // Auto-refresh after showing error
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
         return;
       }
 
-      // Redirect based on role
+      // Successful login - redirect based on role
       switch (profile.role) {
         case "admin":
           navigate("/admin");
@@ -57,13 +127,19 @@ export default function Login() {
           navigate("/student");
           break;
         default:
-          setErrorMsg("Invalid user role. Please contact support.");
-          setLoading(false);
+          setTimeoutPhase("invalid_role");
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
       }
     } catch (error) {
       console.error("Login error:", error);
-      setErrorMsg("Unexpected error. Please try again.");
-      setLoading(false);
+      setTimeoutPhase("unexpected_error");
+
+      // Auto-refresh even on unexpected errors
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     }
   };
 
@@ -101,18 +177,44 @@ export default function Login() {
           Tutoring School Portal
         </h1>
 
-        {errorMsg && (
+        {/* Enhanced status display instead of error messages */}
+        {(connectionStatus === "offline" || timeoutPhase) && (
           <div
             style={{
-              background: "rgba(255, 0, 0, 0.2)",
+              background:
+                connectionStatus === "offline"
+                  ? "rgba(255, 165, 0, 0.2)"
+                  : timeoutPhase?.includes("timeout") ||
+                    timeoutPhase?.includes("failed")
+                  ? "rgba(255, 0, 0, 0.2)"
+                  : "rgba(0, 123, 255, 0.2)",
               color: "white",
-              padding: "10px",
-              borderRadius: "8px",
+              padding: "15px",
+              borderRadius: "12px",
               marginBottom: "20px",
               textAlign: "center",
+              fontSize: "14px",
+              lineHeight: "1.4",
             }}
           >
-            {errorMsg}
+            {connectionStatus === "offline" &&
+              "⚠️ Connection issues detected. Refreshing page..."}
+            {timeoutPhase === "authenticating" && "🔐 Signing you in..."}
+            {timeoutPhase === "fetching_profile" &&
+              "👤 Loading your profile..."}
+            {timeoutPhase === "login_timeout" &&
+              "⏰ Login took too long. Refreshing to try again..."}
+            {timeoutPhase === "profile_timeout" &&
+              "⏰ Profile loading timeout. Refreshing page..."}
+            {timeoutPhase === "connection_failed" &&
+              "🌐 Network connection lost. Refreshing page..."}
+            {(timeoutPhase === "login_failed" ||
+              timeoutPhase === "profile_failed") &&
+              "❌ Login failed. Refreshing to try again..."}
+            {timeoutPhase === "invalid_role" &&
+              "⚠️ Account configuration issue. Please contact support. Refreshing..."}
+            {timeoutPhase === "unexpected_error" &&
+              "🔧 Technical issue occurred. Refreshing page..."}
           </div>
         )}
 
