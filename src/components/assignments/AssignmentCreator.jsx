@@ -26,6 +26,10 @@ const AssignmentCreator = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
+  const [hoverStates, setHoverStates] = useState({
+    allow_late_submission: false,
+    is_published: false,
+  });
 
   useEffect(() => {
     fetchUserAndSubjects();
@@ -385,21 +389,108 @@ const AssignmentCreator = ({
             </select>
           </div>
 
+          {/* Enhanced Checkboxes Section */}
           <div className="form-group">
             <label
               style={{
                 color: "white",
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
+                gap: "12px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500",
+                userSelect: "none",
+                padding: "8px",
+                borderRadius: "8px",
+                transition: "all 0.2s ease",
+                backgroundColor: hoverStates.allow_late_submission
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "transparent",
               }}
+              onMouseEnter={() =>
+                setHoverStates((prev) => ({
+                  ...prev,
+                  allow_late_submission: true,
+                }))
+              }
+              onMouseLeave={() =>
+                setHoverStates((prev) => ({
+                  ...prev,
+                  allow_late_submission: false,
+                }))
+              }
             >
-              <input
-                type="checkbox"
-                name="allow_late_submission"
-                checked={assignment.allow_late_submission}
-                onChange={handleInputChange}
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type="checkbox"
+                  name="allow_late_submission"
+                  checked={assignment.allow_late_submission}
+                  onChange={handleInputChange}
+                  style={{
+                    position: "absolute",
+                    opacity: 0,
+                    cursor: "pointer",
+                    height: 0,
+                    width: 0,
+                  }}
+                />
+                <div
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    backgroundColor: assignment.allow_late_submission
+                      ? "#667eea"
+                      : hoverStates.allow_late_submission
+                      ? "rgba(255, 255, 255, 0.15)"
+                      : "rgba(255, 255, 255, 0.08)",
+                    border: assignment.allow_late_submission
+                      ? "2px solid #667eea"
+                      : hoverStates.allow_late_submission
+                      ? "2px solid rgba(255, 255, 255, 0.5)"
+                      : "2px solid rgba(255, 255, 255, 0.25)",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    position: "relative",
+                    backdropFilter: "blur(10px)",
+                    boxShadow: assignment.allow_late_submission
+                      ? "0 0 16px rgba(102, 126, 234, 0.5), 0 4px 12px rgba(0, 0, 0, 0.2)"
+                      : hoverStates.allow_late_submission
+                      ? "0 0 8px rgba(255, 255, 255, 0.2)"
+                      : "none",
+                    transform: hoverStates.allow_late_submission
+                      ? "scale(1.05)"
+                      : "scale(1)",
+                  }}
+                >
+                  {assignment.allow_late_submission && (
+                    <svg
+                      width="12"
+                      height="9"
+                      viewBox="0 0 12 9"
+                      fill="none"
+                      style={{
+                        transition: "all 0.2s ease",
+                        opacity: assignment.allow_late_submission ? 1 : 0,
+                        transform: assignment.allow_late_submission
+                          ? "scale(1)"
+                          : "scale(0.5)",
+                      }}
+                    >
+                      <path
+                        d="M1 4.5L4 7.5L11 1"
+                        stroke="white"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </div>
+              </div>
               Allow late submissions
             </label>
           </div>
@@ -410,15 +501,95 @@ const AssignmentCreator = ({
                 color: "white",
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
+                gap: "12px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: "500",
+                userSelect: "none",
+                padding: "8px",
+                borderRadius: "8px",
+                transition: "all 0.2s ease",
+                backgroundColor: hoverStates.is_published
+                  ? "rgba(255, 255, 255, 0.05)"
+                  : "transparent",
               }}
+              onMouseEnter={() =>
+                setHoverStates((prev) => ({ ...prev, is_published: true }))
+              }
+              onMouseLeave={() =>
+                setHoverStates((prev) => ({ ...prev, is_published: false }))
+              }
             >
-              <input
-                type="checkbox"
-                name="is_published"
-                checked={assignment.is_published}
-                onChange={handleInputChange}
-              />
+              <div style={{ position: "relative" }}>
+                <input
+                  type="checkbox"
+                  name="is_published"
+                  checked={assignment.is_published}
+                  onChange={handleInputChange}
+                  style={{
+                    position: "absolute",
+                    opacity: 0,
+                    cursor: "pointer",
+                    height: 0,
+                    width: 0,
+                  }}
+                />
+                <div
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    backgroundColor: assignment.is_published
+                      ? "#667eea"
+                      : hoverStates.is_published
+                      ? "rgba(255, 255, 255, 0.15)"
+                      : "rgba(255, 255, 255, 0.08)",
+                    border: assignment.is_published
+                      ? "2px solid #667eea"
+                      : hoverStates.is_published
+                      ? "2px solid rgba(255, 255, 255, 0.5)"
+                      : "2px solid rgba(255, 255, 255, 0.25)",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    position: "relative",
+                    backdropFilter: "blur(10px)",
+                    boxShadow: assignment.is_published
+                      ? "0 0 16px rgba(102, 126, 234, 0.5), 0 4px 12px rgba(0, 0, 0, 0.2)"
+                      : hoverStates.is_published
+                      ? "0 0 8px rgba(255, 255, 255, 0.2)"
+                      : "none",
+                    transform: hoverStates.is_published
+                      ? "scale(1.05)"
+                      : "scale(1)",
+                  }}
+                >
+                  {assignment.is_published && (
+                    <svg
+                      width="12"
+                      height="9"
+                      viewBox="0 0 12 9"
+                      fill="none"
+                      style={{
+                        transition: "all 0.2s ease",
+                        opacity: assignment.is_published ? 1 : 0,
+                        transform: assignment.is_published
+                          ? "scale(1)"
+                          : "scale(0.5)",
+                      }}
+                    >
+                      <path
+                        d="M1 4.5L4 7.5L11 1"
+                        stroke="white"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </div>
+              </div>
               Publish immediately (students will be notified)
             </label>
           </div>
