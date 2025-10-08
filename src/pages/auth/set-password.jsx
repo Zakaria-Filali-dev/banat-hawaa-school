@@ -66,15 +66,38 @@ export default function SetPassword() {
     }
   }, [password]);
 
-  // Check session on mount
+  // Check session on mount with retry logic for invitation flow
   useEffect(() => {
     const checkSession = async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData?.session?.user) {
+      try {
+        // First attempt to get session
+        const { data: sessionData } = await supabase.auth.getSession();
+
+        if (sessionData?.session?.user) {
+          setCheckingSession(false);
+          return;
+        }
+
+        // If no session found, wait a moment and try again (for invitation flow)
+        console.log("No session found, retrying in 1 second...");
+        setTimeout(async () => {
+          const { data: retrySessionData } = await supabase.auth.getSession();
+
+          if (retrySessionData?.session?.user) {
+            setCheckingSession(false);
+            return;
+          }
+
+          // Still no session after retry - redirect to login
+          console.log("No valid session after retry, redirecting to login");
+          navigate("/login");
+        }, 1000);
+      } catch (error) {
+        console.error("Session check error:", error);
         navigate("/login");
       }
-      setCheckingSession(false);
     };
+
     checkSession();
   }, [navigate]);
 

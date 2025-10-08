@@ -6,6 +6,7 @@ import SuspensionModal from "../../components/SuspensionModal";
 import SubjectEditModal from "../../components/SubjectEditModal";
 import AnnouncementEditModal from "../../components/AnnouncementEditModal";
 import MultipleTeacherAssignModal from "../../components/MultipleTeacherAssignModal";
+import UserDeletionModal from "../../components/UserDeletionModal";
 import "./admin.css";
 
 // Removed parent/guardian information from student application cards
@@ -82,6 +83,10 @@ const Admin = () => {
   // Suspension Modal States
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
   const [userToSuspend, setUserToSuspend] = useState(null);
+
+  // User Deletion Modal States
+  const [showDeletionModal, setShowDeletionModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   // Messages States
   const [messages, setMessages] = useState([]);
@@ -1049,32 +1054,16 @@ const Admin = () => {
   };
 
   const handleDeleteStudent = async (studentId, studentName) => {
-    const confirmMessage = `⚠️ DANGER: This will permanently delete ${studentName} and ALL their data including:
-    
-• Student profile
-• Assignment submissions
-• Grades and progress
-• File uploads
-• All records
-• Account from Supabase Auth
+    setUserToDelete({
+      id: studentId,
+      name: studentName,
+      type: "student",
+    });
+    setShowDeletionModal(true);
+  };
 
-This action CANNOT be undone. Are you absolutely sure?`;
-
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
-
-    // Second confirmation
-    const secondConfirm = window.prompt(
-      `To confirm deletion, please type "${studentName}" exactly:`
-    );
-    if (secondConfirm !== studentName) {
-      setModalState({
-        message: "Deletion cancelled - name did not match exactly.",
-        type: "error",
-      });
-      return;
-    }
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
 
     try {
       // Call the backend API for secure deletion
@@ -1084,92 +1073,49 @@ This action CANNOT be undone. Are you absolutely sure?`;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: studentId,
-          userType: "student",
-          userName: studentName,
+          userId: userToDelete.id,
+          userType: userToDelete.type,
+          userName: userToDelete.name,
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to delete student");
+        throw new Error(
+          result.error || `Failed to delete ${userToDelete.type}`
+        );
       }
 
-      fetchStudents();
+      // Refresh the appropriate data
+      if (userToDelete.type === "student") {
+        fetchStudents();
+      } else {
+        fetchTeachers();
+      }
+
       setModalState({
         message:
           result.message ||
-          `${studentName} and all associated data have been permanently deleted.`,
+          `${userToDelete.name} and all associated data have been permanently deleted.`,
         type: "success",
       });
     } catch (error) {
-      console.error("Error deleting student:", error);
+      console.error(`Error deleting ${userToDelete.type}:`, error);
       setModalState({
-        message: "Error deleting student: " + error.message,
+        message: `Error deleting ${userToDelete.type}: ` + error.message,
         type: "error",
       });
     }
   };
 
   const handleDeleteTeacher = async (teacherId, teacherName) => {
-    const confirmMessage = `⚠️ DANGER: This will permanently delete ${teacherName} and ALL their data including:
-• All assignments they created
-• All class sessions they scheduled
-• All grades they assigned
-• All subject assignments
-• All notifications and messages
-• Complete account and profile
-• Account from Supabase Auth
-
-⚠️ THIS ACTION CANNOT BE UNDONE! ⚠️
-
-Type "DELETE" to confirm permanent deletion:`;
-
-    const confirmation = window.prompt(confirmMessage);
-    if (confirmation !== "DELETE") {
-      return;
-    }
-
-    const finalConfirm = window.confirm(
-      `Last chance! Are you absolutely sure you want to permanently delete ${teacherName}?`
-    );
-    if (!finalConfirm) return;
-
-    try {
-      // Call the backend API for secure deletion
-      const response = await fetch("/api/admin-delete-user", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: teacherId,
-          userType: "teacher",
-          userName: teacherName,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to delete teacher");
-      }
-
-      fetchTeachers();
-      setModalState({
-        message:
-          result.message ||
-          `${teacherName} and all associated data have been permanently deleted.`,
-        type: "success",
-      });
-    } catch (error) {
-      console.error("Error deleting teacher:", error);
-      setModalState({
-        message: "Error deleting teacher: " + error.message,
-        type: "error",
-      });
-    }
+    setUserToDelete({
+      id: teacherId,
+      name: teacherName,
+      type: "teacher",
+    });
+    setShowDeletionModal(true);
   };
 
   const handleSendMessage = async (
@@ -3486,6 +3432,18 @@ Type "DELETE" to confirm permanent deletion:`;
             : []
         }
         onSave={handleSaveMultipleTeachers}
+      />
+
+      {/* User Deletion Modal */}
+      <UserDeletionModal
+        isOpen={showDeletionModal}
+        onClose={() => {
+          setShowDeletionModal(false);
+          setUserToDelete(null);
+        }}
+        onConfirm={confirmDeleteUser}
+        userName={userToDelete?.name || ""}
+        userType={userToDelete?.type || "student"}
       />
     </div>
   );

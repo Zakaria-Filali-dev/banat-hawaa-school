@@ -97,7 +97,10 @@ export default function AuthCallback() {
           console.log(
             "Invite verified or session present, redirecting to set-password page"
           );
-          navigate("/auth/set-password");
+          // Small delay to ensure session is properly established
+          setTimeout(() => {
+            navigate("/auth/set-password");
+          }, 500);
           return;
         }
 

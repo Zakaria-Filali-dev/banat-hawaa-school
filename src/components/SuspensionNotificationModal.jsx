@@ -56,7 +56,7 @@ const SuspensionNotificationModal = ({
               </div>
               <div className="contact-item">
                 <strong>📞 Phone Support:</strong>
-                <a href="tel:+1-555-123-4567">+1 (555) 123-4567</a>
+                <a href="tel:+213778023981">+213 7 78 02 39 81</a>
               </div>
               <div className="contact-item">
                 <strong>⏰ Office Hours:</strong>
@@ -70,7 +70,7 @@ const SuspensionNotificationModal = ({
               className="contact-admin-btn"
               onClick={() =>
                 (window.location.href =
-                  "mailto:admin@tutoringschool.com?subject=Account Suspension Appeal")
+                  "mailto:zakifilali42@gmail.com?subject=Account Suspension Appeal")
               }
             >
               📧 Contact Administrator
