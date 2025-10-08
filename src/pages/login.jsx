@@ -27,7 +27,6 @@ export default function Login() {
 
     // Run pre-login diagnostics in development
     if (import.meta.env.DEV) {
-      console.log("🔐 [Login] Starting login process...");
       authDebugger.testConnection();
     }
 
@@ -39,7 +38,6 @@ export default function Login() {
         setTimeoutPhase("connection_failed");
 
         if (import.meta.env.DEV) {
-          console.error("🌐 [Login] Connection failed, running diagnostics...");
           authDebugger.runDiagnostics();
         }
 
@@ -64,12 +62,7 @@ export default function Login() {
           setTimeoutPhase("login_timeout");
 
           if (import.meta.env.DEV) {
-            console.error(
-              "⏰ [Login] Login timeout detected, running diagnostics..."
-            );
-            authDebugger.runDiagnostics().then((diagnostics) => {
-              console.log("🏥 [Login] Timeout diagnostics:", diagnostics);
-            });
+            authDebugger.runDiagnostics();
           }
 
           // Auto-refresh after 2 seconds

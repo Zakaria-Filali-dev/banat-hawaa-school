@@ -190,16 +190,12 @@ function ProtectedRoute({ children, allowedRoles }) {
     const handleOnline = () => {
       setIsOnline(true);
       if (import.meta.env.DEV) {
-        console.log("🔄 [Auth] Network back online, testing connection...");
         authDebugger.testConnection();
       }
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      if (import.meta.env.DEV) {
-        console.log("📵 [Auth] Network offline detected");
-      }
     };
 
     window.addEventListener("online", handleOnline);
@@ -281,14 +277,7 @@ function ProtectedRoute({ children, allowedRoles }) {
 
               // Run diagnostics in development mode
               if (import.meta.env.DEV) {
-                authDebugger
-                  .runDiagnostics(data.user.id)
-                  .then((diagnostics) => {
-                    console.log(
-                      "🏥 [Auth] Auto-diagnostics after timeout:",
-                      diagnostics
-                    );
-                  });
+                authDebugger.runDiagnostics(data.user.id);
               }
 
               // Retry logic for timeouts (up to 2 times)

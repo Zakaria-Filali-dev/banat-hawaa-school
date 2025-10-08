@@ -28,8 +28,6 @@ export default async function handler(req, res) {
     }
 
     try {
-        console.log('Deleting message with ID:', messageId);
-
         // First, check if the message exists
         const { data: existingMessage, error: fetchError } = await supabase
             .from('admin_messages')

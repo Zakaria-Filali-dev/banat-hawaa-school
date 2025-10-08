@@ -31,7 +31,7 @@ export default async function handler(req, res) {
         };
 
         // Test Supabase connection
-        const { data: testData, error: testError } = await supabase
+        const { error: testError } = await supabase
             .from('profiles')
             .select('count(*)')
             .limit(1);

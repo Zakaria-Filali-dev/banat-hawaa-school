@@ -37,7 +37,7 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
-  // Build configuration for better compatibility
+  // Build configuration for better compatibility and optimization
   build: {
     target: 'es2020',
     commonjsOptions: {
@@ -46,8 +46,35 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        format: 'es'
+        format: 'es',
+        // Code splitting configuration to reduce bundle size
+        manualChunks: {
+          // Vendor libraries
+          'vendor': ['react', 'react-dom', 'react-router-dom'],
+          'supabase': ['@supabase/supabase-js'],
+          // Large components
+          'admin': [
+            './src/pages/admin/admin.jsx'
+          ],
+          'student': [
+            './src/pages/student/students.jsx'
+          ],
+          'teacher': [
+            './src/pages/teacher/teacherDash.jsx'
+          ]
+        },
+        // Optimize chunk names for caching
+        chunkFileNames: (chunkInfo) => {
+          const facadeModuleId = chunkInfo.facadeModuleId
+            ? chunkInfo.facadeModuleId.split('/').pop().replace('.jsx', '').replace('.js', '')
+            : 'chunk';
+          return `js/${facadeModuleId}-[hash].js`;
+        }
       }
-    }
+    },
+    // Set chunk size warning limit
+    chunkSizeWarningLimit: 1000,
+    // Enable source maps for production debugging
+    sourcemap: false
   }
 })

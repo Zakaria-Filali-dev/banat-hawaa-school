@@ -7,7 +7,6 @@ const SubjectEditModal = ({
   onSave,
   onDelete,
   onSuspend,
-  teachers = [],
 }) => {
   const [editData, setEditData] = useState({
     name: subject?.name || "",
