@@ -8,10 +8,8 @@ import Teachers from "./pages/teacher/teacherDash.jsx";
 import Confirm from "./pages/auth/Confirm.jsx";
 import AuthCallback from "./pages/auth/AuthCallback.jsx";
 import SetPassword from "./pages/auth/set-password.jsx";
-import SetupPassword from "./pages/setup-password.jsx";
 import { useEffect, useState } from "react";
 import { supabase, authUtils } from "./services/supabaseClient";
-import { authDebugger } from "./utils/authDebugger";
 
 // Auth Error Handler Component
 function AuthErrorHandler({ error }) {
@@ -181,17 +179,9 @@ function ProtectedRoute({ children, allowedRoles }) {
   useEffect(() => {
     let isMounted = true;
 
-    // Enable auth debugging in development
-    if (import.meta.env.DEV) {
-      authDebugger.enableAuthMonitoring();
-    }
-
     // Monitor online/offline status
     const handleOnline = () => {
       setIsOnline(true);
-      if (import.meta.env.DEV) {
-        authDebugger.testConnection();
-      }
     };
 
     const handleOffline = () => {
@@ -276,10 +266,6 @@ function ProtectedRoute({ children, allowedRoles }) {
               );
 
               // Run diagnostics in development mode
-              if (import.meta.env.DEV) {
-                authDebugger.runDiagnostics(data.user.id);
-              }
-
               // Retry logic for timeouts (up to 2 times)
               if (profileRetryCount < 2 && isMounted) {
                 setProfileRetryCount((prev) => prev + 1);
@@ -476,7 +462,6 @@ function App() {
         <Route path="/auth/confirm" element={<Confirm />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/auth/set-password" element={<SetPassword />} />
-        <Route path="/setup-password" element={<SetupPassword />} />
         <Route path="/" element={<Landing />} />
         {/* 404 fallback route */}
         <Route path="*" element={<Navigate to="/" replace />} />

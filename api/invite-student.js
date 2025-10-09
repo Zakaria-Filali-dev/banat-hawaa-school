@@ -93,7 +93,7 @@ export default async function handler(req, res) {
                 full_name,
                 role,
             },
-            redirectTo: `https://banat-hawaa-school.vercel.app/setup-password`
+            redirectTo: `https://banat-hawaa-school.vercel.app/auth/callback`
         }); console.log('Supabase invite response - data:', userData);
         console.log('Supabase invite response - error:', authError); if (authError) {
             console.error('Supabase auth error:', authError);

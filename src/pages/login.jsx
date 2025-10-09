@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authUtils } from "../services/supabaseClient";
-import { authDebugger } from "../utils/authDebugger";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -25,21 +24,12 @@ export default function Login() {
     setLoading(true);
     setTimeoutPhase(null);
 
-    // Run pre-login diagnostics in development
-    if (import.meta.env.DEV) {
-      authDebugger.testConnection();
-    }
-
     try {
       // Check connection before attempting login
       const isConnected = await authUtils.checkConnection();
       if (!isConnected) {
         setConnectionStatus("offline");
         setTimeoutPhase("connection_failed");
-
-        if (import.meta.env.DEV) {
-          authDebugger.runDiagnostics();
-        }
 
         // Auto-refresh after showing offline message
         setTimeout(() => {
@@ -60,10 +50,6 @@ export default function Login() {
       if (error) {
         if (error.message === "Login timeout") {
           setTimeoutPhase("login_timeout");
-
-          if (import.meta.env.DEV) {
-            authDebugger.runDiagnostics();
-          }
 
           // Auto-refresh after 2 seconds
           setTimeout(() => {

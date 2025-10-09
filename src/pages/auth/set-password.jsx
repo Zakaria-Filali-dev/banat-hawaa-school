@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../services/supabaseClient";
+import { logger } from "../../utils/logger";
 import "./set-password.css";
 
 export default function SetPassword() {
@@ -79,7 +80,7 @@ export default function SetPassword() {
         }
 
         // If no session found, wait a moment and try again (for invitation flow)
-        console.log("No session found, retrying in 1 second...");
+        logger.debug("No session found, retrying in 1 second...");
         setTimeout(async () => {
           const { data: retrySessionData } = await supabase.auth.getSession();
 
@@ -89,7 +90,7 @@ export default function SetPassword() {
           }
 
           // Still no session after retry - redirect to login
-          console.log("No valid session after retry, redirecting to login");
+          logger.debug("No valid session after retry, redirecting to login");
           navigate("/login");
         }, 1000);
       } catch (error) {
