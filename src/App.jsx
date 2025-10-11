@@ -11,6 +11,7 @@ import SetPassword from "./pages/auth/set-password.jsx";
 import { useEffect, useState } from "react";
 import { supabase, authUtils } from "./services/supabaseClient";
 
+// App.jsx - Main application component with routing
 // Auth Error Handler Component
 function AuthErrorHandler({ error }) {
   const handleLogout = async () => {
