@@ -38,8 +38,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Enhanced auth utilities with timeout handling
 export const authUtils = {
-    // Login with timeout protection
-    async signInWithTimeout(email, password, timeoutMs = 25000) {
+    // Login with optimized timeout protection (reduced from 25s to 12s)
+    async signInWithTimeout(email, password, timeoutMs = 12000) {
         return new Promise((resolve, reject) => {
             // Set up timeout
             const timeoutId = setTimeout(() => {
@@ -60,8 +60,8 @@ export const authUtils = {
         });
     },
 
-    // Profile fetch with timeout protection  
-    async fetchProfileWithTimeout(userId, timeoutMs = 15000) {
+    // Profile fetch with optimized timeout protection (reduced from 15s to 8s)
+    async fetchProfileWithTimeout(userId, timeoutMs = 8000) {
         return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
                 reject(new Error('Profile fetch timeout'));

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authUtils } from "../services/supabaseClient";
 import LoadingButton from "../components/LoadingButton";
@@ -7,42 +7,22 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState("checking");
-  const [timeoutPhase, setTimeoutPhase] = useState(null);
-  const navigate = useNavigate();
 
-  // Check connection status on component mount
-  useEffect(() => {
-    const checkConnection = async () => {
-      const isOnline = await authUtils.checkConnection();
-      setConnectionStatus(isOnline ? "online" : "offline");
-    };
-    checkConnection();
-  }, []);
+  const [timeoutPhase, setTimeoutPhase] = useState(null);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setTimeoutPhase(null);
+    setError(null);
 
     try {
-      // Check connection before attempting login
-      const isConnected = await authUtils.checkConnection();
-      if (!isConnected) {
-        setConnectionStatus("offline");
-        setTimeoutPhase("connection_failed");
-
-        // Auto-refresh after showing offline message
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
-        return;
-      }
-
-      setConnectionStatus("online");
       setTimeoutPhase("authenticating");
 
-      // Use enhanced login with timeout
+      // Direct login without pre-connection check (optimized performance)
       const { data, error } = await authUtils.signInWithTimeout(
         email,
         password
@@ -51,47 +31,60 @@ export default function Login() {
       if (error) {
         if (error.message === "Login timeout") {
           setTimeoutPhase("login_timeout");
-
-          // Auto-refresh after 2 seconds
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-          return;
+          setError({
+            type: "timeout",
+            message:
+              "Login is taking longer than expected. This might be due to network issues.",
+            action: "retry",
+          });
+        } else {
+          setTimeoutPhase("login_failed");
+          setError({
+            type: "auth_error",
+            message:
+              error.message || "Login failed. Please check your credentials.",
+            action: "retry",
+          });
         }
-
-        // For other errors, also refresh instead of showing red text
-        setTimeoutPhase("login_failed");
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
+        setLoading(false);
         return;
       }
 
       if (!data?.user) {
         setTimeoutPhase("login_failed");
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        setError({
+          type: "no_user",
+          message: "Authentication failed. Please try again.",
+          action: "retry",
+        });
+        setLoading(false);
         return;
       }
 
       setTimeoutPhase("fetching_profile");
 
-      // Fetch user role for redirect with timeout protection
+      // Fetch user role for redirect with optimized timeout
       const { data: profile, error: profileError } =
         await authUtils.fetchProfileWithTimeout(data.user.id);
 
       if (profileError) {
         if (profileError.message === "Profile fetch timeout") {
           setTimeoutPhase("profile_timeout");
+          setError({
+            type: "profile_timeout",
+            message:
+              "Loading user information is taking too long. Please try again.",
+            action: "retry",
+          });
         } else {
           setTimeoutPhase("profile_failed");
+          setError({
+            type: "profile_error",
+            message: "Failed to load user information. Please try again.",
+            action: "retry",
+          });
         }
-
-        // Auto-refresh after showing error
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        setLoading(false);
         return;
       }
 
@@ -108,19 +101,34 @@ export default function Login() {
           break;
         default:
           setTimeoutPhase("invalid_role");
-          setTimeout(() => {
-            window.location.reload();
-          }, 3000);
+          setError({
+            type: "invalid_role",
+            message: "Account configuration issue. Please contact support.",
+            action: "contact_support",
+          });
+          setLoading(false);
       }
     } catch (error) {
       console.error("Login error:", error);
       setTimeoutPhase("unexpected_error");
-
-      // Auto-refresh even on unexpected errors
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      setError({
+        type: "unexpected",
+        message: "An unexpected error occurred. Please try again.",
+        action: "retry",
+      });
+      setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setRetryCount((prev) => prev + 1);
+    setError(null);
+    setTimeoutPhase(null);
+    handleLogin({ preventDefault: () => {} }); // Simulate form event
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   return (
@@ -157,17 +165,11 @@ export default function Login() {
           Tutoring School Portal
         </h1>
 
-        {/* Enhanced status display instead of error messages */}
-        {(connectionStatus === "offline" || timeoutPhase) && (
+        {/* Simplified loading indicator - errors handled below */}
+        {loading && (
           <div
             style={{
-              background:
-                connectionStatus === "offline"
-                  ? "rgba(255, 165, 0, 0.2)"
-                  : timeoutPhase?.includes("timeout") ||
-                    timeoutPhase?.includes("failed")
-                  ? "rgba(255, 0, 0, 0.2)"
-                  : "rgba(0, 123, 255, 0.2)",
+              background: "rgba(0, 123, 255, 0.2)",
               color: "white",
               padding: "15px",
               borderRadius: "12px",
@@ -175,26 +177,17 @@ export default function Login() {
               textAlign: "center",
               fontSize: "14px",
               lineHeight: "1.4",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
             }}
           >
-            {connectionStatus === "offline" &&
-              "⚠️ Connection issues detected. Refreshing page..."}
+            <div className="loading-spinner"></div>
             {timeoutPhase === "authenticating" && "🔐 Signing you in..."}
             {timeoutPhase === "fetching_profile" &&
               "👤 Loading your profile..."}
-            {timeoutPhase === "login_timeout" &&
-              "⏰ Login took too long. Refreshing to try again..."}
-            {timeoutPhase === "profile_timeout" &&
-              "⏰ Profile loading timeout. Refreshing page..."}
-            {timeoutPhase === "connection_failed" &&
-              "🌐 Network connection lost. Refreshing page..."}
-            {(timeoutPhase === "login_failed" ||
-              timeoutPhase === "profile_failed") &&
-              "❌ Login failed. Refreshing to try again..."}
-            {timeoutPhase === "invalid_role" &&
-              "⚠️ Account configuration issue. Please contact support. Refreshing..."}
-            {timeoutPhase === "unexpected_error" &&
-              "🔧 Technical issue occurred. Refreshing page..."}
+            {!timeoutPhase && "Processing login..."}
           </div>
         )}
 
@@ -258,6 +251,110 @@ export default function Login() {
             Login
           </LoadingButton>
         </form>
+
+        {/* Enhanced Error Display with Retry Options */}
+        {error && (
+          <div
+            style={{
+              marginTop: "20px",
+              padding: "16px",
+              background: "rgba(239, 68, 68, 0.1)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              borderRadius: "10px",
+              color: "white",
+            }}
+          >
+            <div
+              style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}
+            >
+              <div style={{ flexShrink: 0, marginTop: "2px" }}>
+                <svg
+                  style={{ width: "20px", height: "20px", fill: "#ef4444" }}
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div style={{ flex: 1 }}>
+                <p
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    marginBottom: "12px",
+                  }}
+                >
+                  {error.message}
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                  }}
+                >
+                  {error.action === "retry" && (
+                    <div
+                      style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}
+                    >
+                      <LoadingButton
+                        onClick={handleRetry}
+                        variant="secondary"
+                        size="small"
+                        style={{
+                          background: "rgba(255, 255, 255, 0.15)",
+                          color: "white",
+                          border: "1px solid rgba(255, 255, 255, 0.3)",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          padding: "6px 12px",
+                        }}
+                      >
+                        Try Again {retryCount > 0 && `(${retryCount})`}
+                      </LoadingButton>
+                      <LoadingButton
+                        onClick={handleRefresh}
+                        variant="secondary"
+                        size="small"
+                        style={{
+                          background: "rgba(255, 255, 255, 0.1)",
+                          color: "rgba(255, 255, 255, 0.8)",
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          padding: "6px 12px",
+                        }}
+                      >
+                        Refresh Page
+                      </LoadingButton>
+                    </div>
+                  )}
+                  {error.action === "contact_support" && (
+                    <LoadingButton
+                      onClick={handleRefresh}
+                      variant="secondary"
+                      size="small"
+                      style={{
+                        background: "rgba(255, 255, 255, 0.15)",
+                        color: "white",
+                        border: "1px solid rgba(255, 255, 255, 0.3)",
+                        borderRadius: "6px",
+                        fontSize: "12px",
+                        padding: "6px 12px",
+                      }}
+                    >
+                      Refresh & Contact Support
+                    </LoadingButton>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div style={{ textAlign: "center", marginTop: "20px" }}>
           <a
