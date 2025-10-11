@@ -8,7 +8,6 @@ import Teachers from "./pages/teacher/teacherDash.jsx";
 import Confirm from "./pages/auth/Confirm.jsx";
 import AuthCallback from "./pages/auth/AuthCallback.jsx";
 import SetPassword from "./pages/auth/set-password.jsx";
-import EmailConfiguration from "./pages/admin/EmailConfiguration.jsx";
 import { useEffect, useState } from "react";
 import { supabase, authUtils } from "./services/supabaseClient";
 
@@ -279,6 +278,7 @@ function ProtectedRoute({ children, allowedRoles }) {
                 setTimeout(() => {
                   if (isMounted) {
                     getUser();
+                    setLoading(false);
                   }
                 }, 2000);
                 return;

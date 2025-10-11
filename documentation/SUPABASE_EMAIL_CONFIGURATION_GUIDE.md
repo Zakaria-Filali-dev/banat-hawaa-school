@@ -35,16 +35,16 @@ The error "Authentication failed: Error sending invite email" occurs because **S
    - `/register` - For registration confirmations
    - Root domain - For general authentication flows
 
-3. **Configure Brevo SMTP Settings**
+3. **Configure Gmail SMTP Settings**
 
    ```
    Enable custom SMTP: ✅ YES
 
    SMTP Settings:
-   - Host: smtp-relay.brevo.com
-   - Port: 587
-   - Username: (your Brevo email/login)
-   - Password: (your Brevo SMTP password from earlier)
+   - Host: smtp.gmail.com
+   - Port: 465
+   - Username: zakifilali42@gmail.com
+   - Password: [Your Gmail App Password]
    - Sender Email: (the email you want invitations to come from)
    - Sender Name: Banat Hawaa School
    ```
@@ -62,11 +62,11 @@ The error "Authentication failed: Error sending invite email" occurs because **S
 
 ### Step 3: Verify Email Delivery
 
-1. **Check Brevo Dashboard**
+1. **Check Gmail Sent Folder**
 
-   - Log into your Brevo account
-   - Check the email sending statistics
-   - Look for any failed sends or bounces
+   - Log into your Gmail account
+   - Check the Sent folder for outgoing emails
+   - Look for any delivery failures or bounced emails
 
 2. **Check Supabase Auth Logs**
    - In your Supabase Dashboard, go to `Authentication` → `Logs`
@@ -74,7 +74,7 @@ The error "Authentication failed: Error sending invite email" occurs because **S
 
 ## Important Notes
 
-⚠️ **The environment variables in Vercel (BREVO*SMTP*\*) are NOT used by Supabase's email system**
+⚠️ **The environment variables in Vercel (SMTP\_\*) are NOT used by Supabase's email system**
 ✅ **Supabase has its own email configuration that must be set in the Supabase Dashboard**
 🔄 **After configuring SMTP, it may take a few minutes to take effect**
 
@@ -94,12 +94,12 @@ If it still doesn't work:
 
 1. **Test the diagnostic endpoint**: https://banat-hawaa-school.vercel.app/api/test-email
 2. **Check Supabase Auth logs** for specific error messages
-3. **Verify Brevo SMTP credentials** are correct in Supabase Dashboard
-4. **Make sure the sender email is verified** in your Brevo account
+3. **Verify Gmail SMTP credentials** are correct in Supabase Dashboard
+4. **Make sure you're using the Gmail App Password** (not regular password)
 
 ## Why This Happens
 
 - Supabase's `auth.admin.inviteUserByEmail()` uses Supabase's own email service
 - This service requires SMTP configuration in the Supabase Dashboard
 - Environment variables in your app (Vercel) don't affect Supabase's email system
-- The Brevo credentials need to be entered directly in Supabase's SMTP settings
+- The Gmail credentials need to be entered directly in Supabase's SMTP settings
