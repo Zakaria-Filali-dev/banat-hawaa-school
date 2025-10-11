@@ -5,6 +5,67 @@ import expertTutorsImg from "../../assets/expert-tutors.png";
 import analyticsImg from "../../assets/analitics.png";
 import globalAccessImg from "../../assets/global-access.png";
 import siteLogo from "../../assets/site-logo.png";
+import "./Landing.css";
+
+// Scroll Reveal Hook
+const useScrollReveal = () => {
+  React.useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("revealed");
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    const elements = document.querySelectorAll(".scroll-reveal");
+    elements.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+};
+
+// Particle Effect Component
+const ParticleBackground = () => {
+  const [particles, setParticles] = React.useState([]);
+
+  React.useEffect(() => {
+    const createParticles = () => {
+      const newParticles = [];
+      for (let i = 0; i < 50; i++) {
+        newParticles.push({
+          id: i,
+          left: Math.random() * 100,
+          animationDelay: Math.random() * 15,
+          size: Math.random() * 3 + 2,
+        });
+      }
+      setParticles(newParticles);
+    };
+
+    createParticles();
+  }, []);
+
+  return (
+    <div className="particles">
+      {particles.map((particle) => (
+        <div
+          key={particle.id}
+          className="particle"
+          style={{
+            left: `${particle.left}%`,
+            animationDelay: `${particle.animationDelay}s`,
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 // Animated Text Cycling Component
 const AnimatedText = ({ words, style }) => {
@@ -58,59 +119,48 @@ const AnimatedText = ({ words, style }) => {
 const Landing = () => {
   const navigate = useNavigate();
 
+  // Initialize scroll reveal
+  useScrollReveal();
+
   return (
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        fontFamily: "Arial, sans-serif",
+        background: `
+          linear-gradient(135deg, #667eea 0%, #764ba2 100%),
+          radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(255, 107, 107, 0.3) 0%, transparent 50%)
+        `,
+        backgroundSize: "100% 100%, 50% 50%, 50% 50%",
+        fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
         overflow: "auto",
         position: "relative",
       }}
     >
-      {/* Animated Background Elements */}
-      <div
-        style={{
-          position: "absolute",
-          top: "10%",
-          left: "10%",
-          width: "100px",
-          height: "100px",
-          background: "rgba(255, 255, 255, 0.1)",
-          borderRadius: "50%",
-          animation: "float 6s ease-in-out infinite",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          top: "60%",
-          right: "15%",
-          width: "150px",
-          height: "150px",
-          background: "rgba(255, 255, 255, 0.05)",
-          borderRadius: "50%",
-          animation: "float 8s ease-in-out infinite reverse",
-        }}
-      />
+      {/* Enhanced Particle Background */}
+      <ParticleBackground />
+
+      {/* Enhanced Animated Background Elements */}
+      <div className="background-orb orb-1" />
+      <div className="background-orb orb-2" />
+      <div className="background-orb orb-3" />
+      <div className="background-orb orb-4" />
+      <div className="background-orb orb-5" />
 
       {/* Main Content Container */}
       <div style={{ padding: "20px", maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Hero Section */}
+        {/* Enhanced Hero Section */}
         <div
+          className="glassmorphism-card scroll-reveal fade-in-scale glow-effect"
           style={{
-            background: "rgba(255, 255, 255, 0.1)",
-            backdropFilter: "blur(15px)",
-            borderRadius: "25px",
             padding: "50px 40px",
             textAlign: "center",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
             marginBottom: "30px",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
           }}
         >
-          {/* School Logo/Icon */}
+          {/* Enhanced School Logo */}
           <div
+            className="bounce-in animate-delay-200"
             style={{
               width: "120px",
               height: "120px",
@@ -125,6 +175,16 @@ const Landing = () => {
               justifyContent: "center",
               padding: "15px",
               border: "2px solid rgba(255, 215, 0, 0.3)",
+              transition: "all 0.3s ease",
+              cursor: "pointer",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "scale(1.1) rotate(5deg)";
+              e.target.style.boxShadow = "0 15px 35px rgba(255, 215, 0, 0.4)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "scale(1) rotate(0deg)";
+              e.target.style.boxShadow = "0 8px 25px rgba(0,0,0,0.3)";
             }}
           >
             <img
@@ -140,13 +200,19 @@ const Landing = () => {
           </div>
 
           <h1
+            className="gradient-text fade-in-up animate-delay-300"
             style={{
-              color: "white",
               marginBottom: "15px",
               fontSize: "3rem",
               fontWeight: "bold",
-              textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+              textShadow: "2px 2px 8px rgba(0,0,0,0.5)",
               letterSpacing: "2px",
+              background:
+                "linear-gradient(45deg, #FFD700, #FF6B6B, #4ECDC4, #45B7D1)",
+              backgroundSize: "400% 400%",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
             }}
           >
             BANAT-HAWAA-SCHOOL
@@ -537,6 +603,158 @@ const Landing = () => {
           </div>
         </div>
       </div>
+
+      {/* Developer Contact Footer */}
+      <footer
+        className="developer-footer glassmorphism-card glow-effect fade-in-up animate-delay-1200"
+        style={{ margin: "20px", marginTop: "50px" }}
+      >
+        <div
+          className="footer-content"
+          style={{ padding: "40px", textAlign: "center" }}
+        >
+          <div
+            className="developer-info fade-in-up animate-delay-1400"
+            style={{ marginBottom: "30px" }}
+          >
+            <h3
+              className="gradient-text"
+              style={{ fontSize: "1.8rem", marginBottom: "15px" }}
+            >
+              👨‍💻 Developer Contact
+            </h3>
+            <p
+              style={{
+                color: "rgba(255, 255, 255, 0.9)",
+                fontSize: "1.1rem",
+                marginBottom: "25px",
+              }}
+            >
+              Need technical support or have questions about the platform?
+            </p>
+            <div
+              className="contact-links"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "15px",
+                alignItems: "center",
+              }}
+            >
+              <a
+                href="mailto:zakifilali42@gmail.com"
+                className="contact-link pulse"
+                style={{
+                  color: "#4ECDC4",
+                  textDecoration: "none",
+                  fontSize: "1.1rem",
+                  padding: "12px 24px",
+                  borderRadius: "25px",
+                  background: "rgba(78, 205, 196, 0.1)",
+                  border: "1px solid rgba(78, 205, 196, 0.3)",
+                  transition: "all 0.3s ease",
+                  display: "inline-block",
+                  minWidth: "280px",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "rgba(78, 205, 196, 0.2)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "rgba(78, 205, 196, 0.1)";
+                  e.target.style.transform = "translateY(0)";
+                }}
+              >
+                📧 ZakariaFilali.DEV@gmail.com
+              </a>
+              <a
+                href="tel:+213778023981"
+                className="contact-link pulse animate-delay-200"
+                style={{
+                  color: "#FF6B6B",
+                  textDecoration: "none",
+                  fontSize: "1.1rem",
+                  padding: "12px 24px",
+                  borderRadius: "25px",
+                  background: "rgba(255, 107, 107, 0.1)",
+                  border: "1px solid rgba(255, 107, 107, 0.3)",
+                  transition: "all 0.3s ease",
+                  display: "inline-block",
+                  minWidth: "280px",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "rgba(255, 107, 107, 0.2)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "rgba(255, 107, 107, 0.1)";
+                  e.target.style.transform = "translateY(0)";
+                }}
+              >
+                📞 +213 778 023 981
+              </a>
+              <a
+                href="https://github.com/Zakaria-Filali-dev"
+                className="contact-link pulse animate-delay-400"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#9B59B6",
+                  textDecoration: "none",
+                  fontSize: "1.1rem",
+                  padding: "12px 24px",
+                  borderRadius: "25px",
+                  background: "rgba(155, 89, 182, 0.1)",
+                  border: "1px solid rgba(155, 89, 182, 0.3)",
+                  transition: "all 0.3s ease",
+                  display: "inline-block",
+                  minWidth: "280px",
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.background = "rgba(155, 89, 182, 0.2)";
+                  e.target.style.transform = "translateY(-2px)";
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.background = "rgba(155, 89, 182, 0.1)";
+                  e.target.style.transform = "translateY(0)";
+                }}
+              >
+                🔗 GitHub Portfolio
+              </a>
+            </div>
+          </div>
+          <div
+            className="footer-divider"
+            style={{
+              height: "1px",
+              background:
+                "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)",
+              margin: "25px 0",
+            }}
+          ></div>
+          <div className="copyright fade-in-up animate-delay-1600">
+            <p
+              style={{
+                color: "rgba(255, 255, 255, 0.8)",
+                margin: "0 0 10px 0",
+              }}
+            >
+              &copy; 2024 BANAT-HAWAA-SCHOOL. All rights reserved.
+            </p>
+            <p
+              className="tech-stack"
+              style={{
+                color: "rgba(255, 255, 255, 0.6)",
+                fontSize: "0.9rem",
+                margin: 0,
+                fontStyle: "italic",
+              }}
+            >
+              Built with ❤️ using React 19 + Vite 6 + Supabase
+            </p>
+          </div>
+        </div>
+      </footer>
 
       {/* Add keyframe animations */}
       <style>
