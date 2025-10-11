@@ -445,14 +445,6 @@ function App() {
           }
         />
         <Route
-          path="/admin/email-config"
-          element={
-            <ProtectedRoute allowedRoles={["admin"]}>
-              <EmailConfiguration />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/student"
           element={
             <ProtectedRoute allowedRoles={["student"]}>
