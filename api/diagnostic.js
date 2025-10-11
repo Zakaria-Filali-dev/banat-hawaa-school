@@ -24,6 +24,12 @@ export default async function handler(req, res) {
         const envCheck = {
             SUPABASE_URL: !!process.env.SUPABASE_URL,
             SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+            SMTP_HOST: process.env.SMTP_HOST || 'Not set',
+            SMTP_PORT: process.env.SMTP_PORT || 'Not set',
+            SMTP_USER: !!process.env.SMTP_USER,
+            SMTP_PASS: !!process.env.SMTP_PASS,
+            SMTP_FROM: process.env.SMTP_FROM || 'Not set',
+            // Legacy Brevo vars (for comparison)
             BREVO_SMTP_SERVER: !!process.env.BREVO_SMTP_SERVER,
             BREVO_SMTP_PORT: !!process.env.BREVO_SMTP_PORT,
             BREVO_SMTP_USER: !!process.env.BREVO_SMTP_USER,

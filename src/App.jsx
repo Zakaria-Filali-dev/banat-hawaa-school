@@ -8,6 +8,7 @@ import Teachers from "./pages/teacher/teacherDash.jsx";
 import Confirm from "./pages/auth/Confirm.jsx";
 import AuthCallback from "./pages/auth/AuthCallback.jsx";
 import SetPassword from "./pages/auth/set-password.jsx";
+import EmailConfiguration from "./pages/admin/EmailConfiguration.jsx";
 import { useEffect, useState } from "react";
 import { supabase, authUtils } from "./services/supabaseClient";
 
@@ -440,6 +441,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <Admins />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/email-config"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <EmailConfiguration />
             </ProtectedRoute>
           }
         />
