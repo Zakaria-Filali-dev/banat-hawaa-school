@@ -18,10 +18,10 @@ When you accept applications, no invitation emails are sent because Supabase ema
 3. Fill in these details:
 
 ```
-SMTP Host: smtp-relay.brevo.com
-SMTP Port: 587
-SMTP User: 954ebc001@smtp-brevo.com
-SMTP Pass: 85vZbYyXxnSOCaRq
+SMTP Host: smtp.gmail.com
+SMTP Port: 465
+SMTP User: zakifilali42@gmail.com
+SMTP Pass: [Your Gmail App Password]
 ```
 
 ### Step 3: Configure Email Templates

@@ -24,16 +24,17 @@ export default async function handler(req, res) {
         const envCheck = {
             SUPABASE_URL: !!process.env.SUPABASE_URL,
             SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-            BREVO_SMTP_SERVER: !!process.env.BREVO_SMTP_SERVER,
-            BREVO_SMTP_PORT: !!process.env.BREVO_SMTP_PORT,
-            BREVO_SMTP_USER: !!process.env.BREVO_SMTP_USER,
-            BREVO_SMTP_PASS: !!process.env.BREVO_SMTP_PASS,
+            SMTP_HOST: process.env.SMTP_HOST || 'Not set',
+            SMTP_PORT: process.env.SMTP_PORT || 'Not set',
+            SMTP_USER: !!process.env.SMTP_USER,
+            SMTP_PASS: !!process.env.SMTP_PASS,
+            SMTP_FROM: process.env.SMTP_FROM || 'Not set'
         };
 
         // Test Supabase connection
         const { error: testError } = await supabase
             .from('profiles')
-            .select('count(*)')
+            .select('id')
             .limit(1);
 
         const connectionTest = {

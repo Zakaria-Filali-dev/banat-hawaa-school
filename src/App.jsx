@@ -278,6 +278,7 @@ function ProtectedRoute({ children, allowedRoles }) {
                 setTimeout(() => {
                   if (isMounted) {
                     getUser();
+                    setLoading(false);
                   }
                 }, 2000);
                 return;
@@ -440,6 +441,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <Admins />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/email-config"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <EmailConfiguration />
             </ProtectedRoute>
           }
         />

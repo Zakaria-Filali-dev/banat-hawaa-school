@@ -4,6 +4,7 @@ import { supabase } from "../../services/supabaseClient";
 import FileUpload from "../../components/FileUpload";
 import FilePreview from "../../components/FilePreview";
 import SuspensionNotificationModal from "../../components/SuspensionNotificationModal";
+import LoadingButton from "../../components/LoadingButton";
 import "./students.css";
 
 export default function Students() {
@@ -1331,24 +1332,25 @@ export default function Students() {
               </div>
 
               <div className="action-buttons">
-                <button
+                <LoadingButton
                   type="submit"
-                  className="btn btn-primary"
-                  disabled={
-                    isSubmitting ||
-                    (!submissionFiles.length && !submissionText.trim())
-                  }
+                  loading={isSubmitting}
+                  loadingText="Submitting..."
+                  variant="success"
+                  size="medium"
+                  disabled={!submissionFiles.length && !submissionText.trim()}
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Assignment"}
-                </button>
-                <button
+                  Submit Assignment
+                </LoadingButton>
+                <LoadingButton
                   type="button"
-                  className="btn btn-secondary"
+                  variant="secondary"
+                  size="medium"
                   onClick={handleCancelSubmission}
                   disabled={isSubmitting}
                 >
                   Cancel
-                </button>
+                </LoadingButton>
               </div>
             </form>
           </div>

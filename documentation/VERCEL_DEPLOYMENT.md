@@ -35,11 +35,11 @@ Click "Environment Variables" and add these **one by one**:
 
 - `SUPABASE_URL` = `your_supabase_url_here`
 - `SUPABASE_SERVICE_ROLE_KEY` = `your_supabase_service_role_key_here`
-- `SMTP_HOST` = `smtp-relay.brevo.com`
-- `SMTP_PORT` = `587`
-- `SMTP_USER` = `your_brevo_username_here`
-- `SMTP_PASS` = `your_brevo_password_here`
-- `SMTP_FROM` = `YOUR-SCHOOL-NAME <your_email@domain.com>`
+- `SMTP_HOST` = `smtp.gmail.com`
+- `SMTP_PORT` = `465`
+- `SMTP_USER` = `your_gmail_address@gmail.com`
+- `SMTP_PASS` = `your_gmail_app_password_here`
+- `SMTP_FROM` = `YOUR-SCHOOL-NAME <your_gmail_address@gmail.com>`
 - `FRONTEND_URL` = `https://your-app-name.vercel.app`
 
 ### 5. Deploy
