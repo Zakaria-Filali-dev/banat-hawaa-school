@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { authUtils } from "../services/supabaseClient";
+import LoadingButton from "../components/LoadingButton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -240,26 +241,22 @@ export default function Login() {
             />
           </div>
 
-          <button
+          <LoadingButton
             type="submit"
-            disabled={loading}
+            loading={loading}
+            loadingText="Logging in..."
+            variant="primary"
+            size="large"
             style={{
               width: "100%",
-              padding: "15px",
-              borderRadius: "10px",
-              border: "none",
-              background: loading
-                ? "rgba(255, 255, 255, 0.3)"
-                : "rgba(255, 255, 255, 0.8)",
+              background: "rgba(255, 255, 255, 0.9)",
               color: "#333",
               fontSize: "16px",
-              fontWeight: "bold",
-              cursor: loading ? "not-allowed" : "pointer",
-              transition: "all 0.3s ease",
+              borderRadius: "10px",
             }}
           >
-            {loading ? "Logging in..." : "Login"}
-          </button>
+            Login
+          </LoadingButton>
         </form>
 
         <div style={{ textAlign: "center", marginTop: "20px" }}>

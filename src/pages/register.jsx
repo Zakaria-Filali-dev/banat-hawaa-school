@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../services/supabaseClient";
 import { Link } from "react-router-dom";
+import LoadingButton from "../components/LoadingButton";
 import "./register.css";
 
 export default function Register() {
@@ -185,13 +186,16 @@ export default function Register() {
                 rows="3"
               />
             </div>
-            <button
+            <LoadingButton
               type="submit"
-              disabled={loading}
-              className="btn btn-primary btn-full"
+              loading={loading}
+              loadingText="Submitting..."
+              variant="primary"
+              size="large"
+              className="btn-full"
             >
-              {loading ? "Submitting..." : "Submit Application"}
-            </button>
+              Submit Application
+            </LoadingButton>
             {errorMsg && (
               <div className="message message-error mt-2">{errorMsg}</div>
             )}

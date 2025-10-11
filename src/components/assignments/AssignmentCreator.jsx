@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../../services/supabaseClient";
 import FileUpload from "../FileUpload";
 import FilePreview from "../FilePreview";
+import LoadingButton from "../LoadingButton";
 
 const AssignmentCreator = ({
   editingAssignment,
@@ -622,20 +623,23 @@ const AssignmentCreator = ({
           </div>
 
           <div className="action-buttons">
-            <button
+            <LoadingButton
               type="submit"
-              className="btn btn-primary"
-              disabled={loading}
+              loading={loading}
+              loadingText="Creating..."
+              variant="primary"
+              size="medium"
             >
-              {loading ? "Creating..." : "Create Assignment"}
-            </button>
-            <button
+              Create Assignment
+            </LoadingButton>
+            <LoadingButton
               type="button"
-              className="btn btn-secondary"
+              variant="secondary"
+              size="medium"
               onClick={onCancel}
             >
               Cancel
-            </button>
+            </LoadingButton>
           </div>
         </form>
       </div>
