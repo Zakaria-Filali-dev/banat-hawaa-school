@@ -67,7 +67,7 @@ export default function SetPassword() {
     }
   }, [password]);
 
-  // Check session on mount with retry logic for invitation flow
+  // Check session on mount with extended retry logic for mobile invitation flow
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -79,8 +79,10 @@ export default function SetPassword() {
           return;
         }
 
-        // If no session found, wait a moment and try again (for invitation flow)
-        logger.debug("No session found, retrying in 1 second...");
+        // If no session found, wait longer for mobile/slow connections (3 seconds)
+        logger.debug(
+          "No session found, retrying in 3 seconds for mobile compatibility..."
+        );
         setTimeout(async () => {
           const { data: retrySessionData } = await supabase.auth.getSession();
 
@@ -89,13 +91,27 @@ export default function SetPassword() {
             return;
           }
 
-          // Still no session after retry - redirect to login
-          logger.debug("No valid session after retry, redirecting to login");
-          navigate("/login");
-        }, 1000);
+          // Try one more time with longer delay for mobile browsers
+          logger.debug("Second retry in 2 more seconds...");
+          setTimeout(async () => {
+            const { data: finalRetryData } = await supabase.auth.getSession();
+
+            if (finalRetryData?.session?.user) {
+              setCheckingSession(false);
+              return;
+            }
+
+            // Still no session after extended retries - redirect to login
+            logger.debug(
+              "No valid session after extended retries, redirecting to login"
+            );
+            navigate("/login");
+          }, 2000);
+        }, 3000);
       } catch (error) {
         console.error("Session check error:", error);
-        navigate("/login");
+        // Don't immediately redirect on error, wait for potential session recovery
+        setTimeout(() => navigate("/login"), 2000);
       }
     };
 
