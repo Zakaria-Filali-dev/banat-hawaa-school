@@ -35,12 +35,13 @@ const ParticleBackground = () => {
   React.useEffect(() => {
     const createParticles = () => {
       const newParticles = [];
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 25; i++) {
+        // Reduced particle count
         newParticles.push({
           id: i,
           left: Math.random() * 100,
-          animationDelay: Math.random() * 15,
-          size: Math.random() * 3 + 2,
+          animationDelay: Math.random() * 20, // Increased delay range
+          size: Math.random() * 1.5 + 0.5, // Made particles smaller
         });
       }
       setParticles(newParticles);
@@ -207,8 +208,7 @@ const Landing = () => {
               fontWeight: "bold",
               textShadow: "2px 2px 8px rgba(0,0,0,0.5)",
               letterSpacing: "2px",
-              background:
-                "linear-gradient(45deg, #FFD700, #FF6B6B, #4ECDC4, #45B7D1)",
+              background: "linear-gradient(45deg, #FFFFFF, #E0C3FC)",
               backgroundSize: "400% 400%",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
@@ -604,167 +604,38 @@ const Landing = () => {
         </div>
       </div>
 
-      {/* Developer Contact Footer */}
-      <footer
-        className="developer-footer glassmorphism-card glow-effect fade-in-up animate-delay-1200"
-        style={{ margin: "20px", marginTop: "50px" }}
-      >
-        <div
-          className="footer-content"
-          style={{ padding: "40px", textAlign: "center" }}
-        >
-          <div
-            className="developer-info fade-in-up animate-delay-1400"
-            style={{ marginBottom: "30px" }}
-          >
-            <h3
-              className="gradient-text"
-              style={{ fontSize: "1.8rem", marginBottom: "15px" }}
+      {/* Redesigned Footer */}
+      <footer className="landing-footer glassmorphism-card scroll-reveal">
+        <div className="footer-content">
+          <div className="footer-logo">
+            <img
+              src={siteLogo}
+              alt="Logo"
+              style={{ width: "50px", height: "50px" }}
+            />
+            <span
+              style={{ fontSize: "1.2rem", fontWeight: "bold", color: "white" }}
             >
-              👨‍💻 Developer Contact
-            </h3>
-            <p
-              style={{
-                color: "rgba(255, 255, 255, 0.9)",
-                fontSize: "1.1rem",
-                marginBottom: "25px",
-              }}
-            >
-              Need technical support or have questions about the platform?
-            </p>
-            <div
-              className="contact-links"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "15px",
-                alignItems: "center",
-              }}
-            >
-              <a
-                href="mailto:zakifilali42@gmail.com"
-                className="contact-link pulse"
-                style={{
-                  color: "#4ECDC4",
-                  textDecoration: "none",
-                  fontSize: "1.1rem",
-                  padding: "12px 24px",
-                  borderRadius: "25px",
-                  background: "rgba(78, 205, 196, 0.1)",
-                  border: "1px solid rgba(78, 205, 196, 0.3)",
-                  transition: "all 0.3s ease",
-                  display: "inline-block",
-                  minWidth: "280px",
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = "rgba(78, 205, 196, 0.2)";
-                  e.target.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = "rgba(78, 205, 196, 0.1)";
-                  e.target.style.transform = "translateY(0)";
-                }}
-              >
-                📧 ZakariaFilali.DEV@gmail.com
-              </a>
-              <a
-                href="tel:+213778023981"
-                className="contact-link pulse animate-delay-200"
-                style={{
-                  color: "#FF6B6B",
-                  textDecoration: "none",
-                  fontSize: "1.1rem",
-                  padding: "12px 24px",
-                  borderRadius: "25px",
-                  background: "rgba(255, 107, 107, 0.1)",
-                  border: "1px solid rgba(255, 107, 107, 0.3)",
-                  transition: "all 0.3s ease",
-                  display: "inline-block",
-                  minWidth: "280px",
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = "rgba(255, 107, 107, 0.2)";
-                  e.target.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = "rgba(255, 107, 107, 0.1)";
-                  e.target.style.transform = "translateY(0)";
-                }}
-              >
-                📞 +213 778 023 981
-              </a>
-              <a
-                href="https://github.com/Zakaria-Filali-dev"
-                className="contact-link pulse animate-delay-400"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  color: "#9B59B6",
-                  textDecoration: "none",
-                  fontSize: "1.1rem",
-                  padding: "12px 24px",
-                  borderRadius: "25px",
-                  background: "rgba(155, 89, 182, 0.1)",
-                  border: "1px solid rgba(155, 89, 182, 0.3)",
-                  transition: "all 0.3s ease",
-                  display: "inline-block",
-                  minWidth: "280px",
-                }}
-                onMouseOver={(e) => {
-                  e.target.style.background = "rgba(155, 89, 182, 0.2)";
-                  e.target.style.transform = "translateY(-2px)";
-                }}
-                onMouseOut={(e) => {
-                  e.target.style.background = "rgba(155, 89, 182, 0.1)";
-                  e.target.style.transform = "translateY(0)";
-                }}
-              >
-                🔗 GitHub Portfolio
-              </a>
-            </div>
+              BANAT-HAWAA-SCHOOL
+            </span>
           </div>
-          <div
-            className="footer-divider"
-            style={{
-              height: "1px",
-              background:
-                "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)",
-              margin: "25px 0",
-            }}
-          ></div>
-          <div className="copyright fade-in-up animate-delay-1600">
-            <p
-              style={{
-                color: "rgba(255, 255, 255, 0.8)",
-                margin: "0 0 10px 0",
-              }}
-            >
-              &copy; 2024 BANAT-HAWAA-SCHOOL. All rights reserved.
-            </p>
-            <p
-              className="tech-stack"
-              style={{
-                color: "rgba(255, 255, 255, 0.6)",
-                fontSize: "0.9rem",
-                margin: 0,
-                fontStyle: "italic",
-              }}
-            >
-              Built with ❤️ using React 19 + Vite 6 + Supabase
-            </p>
+          <p className="footer-text">
+            Empowering the next generation of learners through technology and
+            expert guidance.
+          </p>
+          <div className="footer-links">
+            <a href="mailto:zakariafilali2007@gmail.com">Contact</a>
+            <a href="https://github.com/Zakaria-Filali-dev">GitHub</a>
+            <a href="#privacy">Privacy Policy</a>
           </div>
         </div>
+        <div className="footer-bottom">
+          <p>
+            &copy; {new Date().getFullYear()} BANAT-HAWAA-SCHOOL. All Rights
+            Reserved.
+          </p>
+        </div>
       </footer>
-
-      {/* Add keyframe animations */}
-      <style>
-        {`
-          @keyframes float {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(180deg); }
-          }
-        `}
-      </style>
     </div>
   );
 };

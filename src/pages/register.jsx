@@ -19,6 +19,7 @@ export default function Register() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
   const [formErrors, setFormErrors] = useState({});
+  const [currentStep, setCurrentStep] = useState(1);
 
   // Load available subjects when component mounts
   useEffect(() => {
@@ -79,6 +80,16 @@ export default function Register() {
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  const nextStep = () => {
+    if (validateForm()) {
+      setCurrentStep((prev) => prev + 1);
+    }
+  };
+
+  const prevStep = () => {
+    setCurrentStep((prev) => prev - 1);
   };
 
   const handleSubjectChange = (subjectName) => {
@@ -197,17 +208,23 @@ export default function Register() {
 
           {/* Progress Indicator */}
           <div className="form-progress">
-            <div className="progress-step active">
+            <div
+              className={`progress-step ${currentStep >= 1 ? "active" : ""}`}
+            >
               <span className="step-number">1</span>
               <span className="step-label">Personal Info</span>
             </div>
             <div className="progress-line"></div>
-            <div className="progress-step">
+            <div
+              className={`progress-step ${currentStep >= 2 ? "active" : ""}`}
+            >
               <span className="step-number">2</span>
               <span className="step-label">Subjects</span>
             </div>
             <div className="progress-line"></div>
-            <div className="progress-step">
+            <div
+              className={`progress-step ${currentStep >= 3 ? "active" : ""}`}
+            >
               <span className="step-number">3</span>
               <span className="step-label">Submit</span>
             </div>
@@ -215,212 +232,250 @@ export default function Register() {
 
           <form onSubmit={handleRegister} className="register-form">
             {/* Personal Information Section */}
-            <div className="form-section">
-              <h3 className="section-title">📋 Personal Information</h3>
+            {currentStep === 1 && (
+              <div className="form-section">
+                <h3 className="section-title">📋 Personal Information</h3>
 
-              <div className="form-group">
-                <label className="form-label">Full Name *</label>
-                <input
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={fullName}
-                  onChange={(e) => {
-                    setFullName(e.target.value);
-                    if (formErrors.fullName) {
-                      setFormErrors((prev) => ({
-                        ...prev,
-                        fullName: undefined,
-                      }));
-                    }
-                  }}
-                  disabled={loading}
-                  className={`form-input ${formErrors.fullName ? "error" : ""}`}
-                />
-                {formErrors.fullName && (
-                  <span className="error-message">{formErrors.fullName}</span>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Email Address *</label>
-                <input
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (formErrors.email) {
-                      setFormErrors((prev) => ({ ...prev, email: undefined }));
-                    }
-                  }}
-                  disabled={loading}
-                  className={`form-input ${formErrors.email ? "error" : ""}`}
-                />
-                {formErrors.email && (
-                  <span className="error-message">{formErrors.email}</span>
-                )}
-              </div>
-
-              <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Date of Birth *</label>
+                  <label className="form-label">Full Name *</label>
                   <input
-                    type="date"
-                    value={dateOfBirth}
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={fullName}
                     onChange={(e) => {
-                      setDateOfBirth(e.target.value);
-                      if (formErrors.dateOfBirth) {
+                      setFullName(e.target.value);
+                      if (formErrors.fullName) {
                         setFormErrors((prev) => ({
                           ...prev,
-                          dateOfBirth: undefined,
+                          fullName: undefined,
                         }));
                       }
                     }}
                     disabled={loading}
                     className={`form-input ${
-                      formErrors.dateOfBirth ? "error" : ""
+                      formErrors.fullName ? "error" : ""
                     }`}
-                    max={new Date().toISOString().split("T")[0]}
                   />
-                  {formErrors.dateOfBirth && (
-                    <span className="error-message">
-                      {formErrors.dateOfBirth}
-                    </span>
+                  {formErrors.fullName && (
+                    <span className="error-message">{formErrors.fullName}</span>
                   )}
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Phone Number</label>
+                  <label className="form-label">Email Address *</label>
                   <input
-                    type="tel"
-                    placeholder="+213 123 456 789"
-                    value={phone}
+                    type="email"
+                    placeholder="your.email@example.com"
+                    value={email}
                     onChange={(e) => {
-                      setPhone(e.target.value);
-                      if (formErrors.phone) {
+                      setEmail(e.target.value);
+                      if (formErrors.email) {
                         setFormErrors((prev) => ({
                           ...prev,
-                          phone: undefined,
+                          email: undefined,
                         }));
                       }
                     }}
                     disabled={loading}
-                    className={`form-input ${formErrors.phone ? "error" : ""}`}
+                    className={`form-input ${formErrors.email ? "error" : ""}`}
                   />
-                  {formErrors.phone && (
-                    <span className="error-message">{formErrors.phone}</span>
+                  {formErrors.email && (
+                    <span className="error-message">{formErrors.email}</span>
                   )}
                 </div>
-              </div>
 
-              <div className="form-group">
-                <label className="form-label">Address</label>
-                <input
-                  type="text"
-                  placeholder="Your address (optional)"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  disabled={loading}
-                  className="form-input"
-                />
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Date of Birth *</label>
+                    <input
+                      type="date"
+                      value={dateOfBirth}
+                      onChange={(e) => {
+                        setDateOfBirth(e.target.value);
+                        if (formErrors.dateOfBirth) {
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            dateOfBirth: undefined,
+                          }));
+                        }
+                      }}
+                      disabled={loading}
+                      className={`form-input ${
+                        formErrors.dateOfBirth ? "error" : ""
+                      }`}
+                      max={new Date().toISOString().split("T")[0]}
+                    />
+                    {formErrors.dateOfBirth && (
+                      <span className="error-message">
+                        {formErrors.dateOfBirth}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Phone Number</label>
+                    <input
+                      type="tel"
+                      placeholder="+213 123 456 789"
+                      value={phone}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (formErrors.phone) {
+                          setFormErrors((prev) => ({
+                            ...prev,
+                            phone: undefined,
+                          }));
+                        }
+                      }}
+                      disabled={loading}
+                      className={`form-input ${
+                        formErrors.phone ? "error" : ""
+                      }`}
+                    />
+                    {formErrors.phone && (
+                      <span className="error-message">{formErrors.phone}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Address</label>
+                  <input
+                    type="text"
+                    placeholder="Your address (optional)"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    disabled={loading}
+                    className="form-input"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Subject Selection Section */}
-            <div className="form-section">
-              <h3 className="section-title">📚 Subject Selection</h3>
-              <p className="section-description">
-                Choose the subjects you're interested in studying with us
-              </p>
+            {currentStep === 2 && (
+              <div className="form-section">
+                <h3 className="section-title">📚 Subject Selection</h3>
+                <p className="section-description">
+                  Choose the subjects you're interested in studying with us
+                </p>
 
-              <div className="subjects-grid">
-                {subjects.map((subject) => (
-                  <label
-                    key={subject.id}
-                    className={`subject-card ${
-                      selectedSubjects.includes(subject.name) ? "selected" : ""
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedSubjects.includes(subject.name)}
-                      onChange={() => handleSubjectChange(subject.name)}
-                      disabled={loading}
-                      className="subject-checkbox"
-                    />
-                    <div className="subject-content">
-                      <div className="subject-name">{subject.name}</div>
-                      <div className="subject-description">
-                        {subject.description}
+                <div className="subjects-grid">
+                  {subjects.map((subject) => (
+                    <label
+                      key={subject.id}
+                      className={`subject-card ${
+                        selectedSubjects.includes(subject.name)
+                          ? "selected"
+                          : ""
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedSubjects.includes(subject.name)}
+                        onChange={() => handleSubjectChange(subject.name)}
+                        disabled={loading}
+                        className="subject-checkbox"
+                      />
+                      <div className="subject-content">
+                        <div className="subject-name">{subject.name}</div>
+                        <div className="subject-description">
+                          {subject.description}
+                        </div>
                       </div>
-                    </div>
-                    <div className="subject-check">✓</div>
-                  </label>
-                ))}
-              </div>
+                      <div className="subject-check">✓</div>
+                    </label>
+                  ))}
+                </div>
 
-              {formErrors.subjects && (
-                <span className="error-message">{formErrors.subjects}</span>
-              )}
-            </div>
+                {formErrors.subjects && (
+                  <span className="error-message">{formErrors.subjects}</span>
+                )}
+              </div>
+            )}
 
             {/* Additional Information Section */}
-            <div className="form-section">
-              <h3 className="section-title">💭 Tell Us About Yourself</h3>
+            {currentStep === 3 && (
+              <div className="form-section">
+                <h3 className="section-title">💭 Tell Us About Yourself</h3>
 
-              <div className="form-group">
-                <label className="form-label">
-                  Why do you want to join our school?
-                </label>
-                <textarea
-                  placeholder="Share your motivation and learning goals... (optional)"
-                  value={motivation}
-                  onChange={(e) => setMotivation(e.target.value)}
-                  disabled={loading}
-                  className="form-textarea"
-                  rows="3"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Previous Experience</label>
-                <textarea
-                  placeholder="Tell us about your background in these subjects... (optional)"
-                  value={previousExperience}
-                  onChange={(e) => setPreviousExperience(e.target.value)}
-                  disabled={loading}
-                  className="form-textarea"
-                  rows="3"
-                />
-              </div>
-            </div>
-            {/* Submit Section */}
-            <div className="form-section">
-              <LoadingButton
-                type="submit"
-                isLoading={loading}
-                loadingText="Submitting Application..."
-                variant="primary"
-                size="large"
-                className="submit-button"
-              >
-                🚀 Submit Application
-              </LoadingButton>
-
-              {errorMsg && (
-                <div className="alert alert-error">
-                  <span className="alert-icon">⚠️</span>
-                  <span>{errorMsg}</span>
+                <div className="form-group">
+                  <label className="form-label">
+                    Why do you want to join our school?
+                  </label>
+                  <textarea
+                    placeholder="Share your motivation and learning goals... (optional)"
+                    value={motivation}
+                    onChange={(e) => setMotivation(e.target.value)}
+                    disabled={loading}
+                    className="form-textarea"
+                    rows="3"
+                  />
                 </div>
+
+                <div className="form-group">
+                  <label className="form-label">Previous Experience</label>
+                  <textarea
+                    placeholder="Tell us about your background in these subjects... (optional)"
+                    value={previousExperience}
+                    onChange={(e) => setPreviousExperience(e.target.value)}
+                    disabled={loading}
+                    className="form-textarea"
+                    rows="3"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Navigation and Submit Section */}
+            <div className="form-navigation">
+              {currentStep > 1 && (
+                <LoadingButton
+                  type="button"
+                  onClick={prevStep}
+                  variant="secondary"
+                >
+                  Previous
+                </LoadingButton>
               )}
 
-              {successMsg && (
-                <div className="alert alert-success">
-                  <span className="alert-icon">✅</span>
-                  <span>{successMsg}</span>
-                </div>
+              {currentStep < 3 && (
+                <LoadingButton
+                  type="button"
+                  onClick={nextStep}
+                  variant="primary"
+                >
+                  Next
+                </LoadingButton>
+              )}
+
+              {currentStep === 3 && (
+                <LoadingButton
+                  type="submit"
+                  isLoading={loading}
+                  loadingText="Submitting Application..."
+                  variant="primary"
+                  size="large"
+                  className="submit-button"
+                >
+                  🚀 Submit Application
+                </LoadingButton>
               )}
             </div>
+
+            {errorMsg && (
+              <div className="alert alert-error">
+                <span className="alert-icon">⚠️</span>
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {successMsg && (
+              <div className="alert alert-success">
+                <span className="alert-icon">✅</span>
+                <span>{successMsg}</span>
+              </div>
+            )}
           </form>
 
           {/* Footer */}
