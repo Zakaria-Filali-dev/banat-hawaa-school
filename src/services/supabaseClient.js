@@ -84,6 +84,18 @@ export const authUtils = {
         });
     },
 
+    // Get user role from profiles table
+    async getUserRole(userId) {
+        try {
+            const { data, error } = await this.fetchProfileWithTimeout(userId);
+            if (error) throw error;
+            return data?.role || null;
+        } catch (error) {
+            console.error('Error fetching user role:', error);
+            return null;
+        }
+    },
+
     // Connection status checker
     async checkConnection() {
         try {
