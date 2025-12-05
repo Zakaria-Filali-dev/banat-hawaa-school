@@ -251,12 +251,20 @@
 }
 
 .form-label,
-label {
-    color: #1f2937 !important;
-    font-weight: 600;
-    font-size: 14px;
+label,
+.register-card label,
+.form-group label,
+.register-page label {
+    color: #111827 !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
     margin-bottom: 8px;
     display: block;
+    text-shadow: none !important;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 4px 8px;
+    border-radius: 6px;
+    width: fit-content;
 }
 
 .form-row {

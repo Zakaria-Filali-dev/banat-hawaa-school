@@ -14,6 +14,15 @@
     --glass-border: var(--glass-border-admin);
 }
 
+/* CRITICAL: Override text colors for subject cards specifically */
+.admin-container .subjects-section .subject-card,
+.admin-container .subjects-section .subject-card *,
+.admin-container .subjects-grid .subject-card,
+.admin-container .subjects-grid .subject-card * {
+    --text-primary: #111827 !important;
+    --text-secondary: #6b7280 !important;
+}
+
 /* Performance and Stability Fixes */
 * {
     backface-visibility: hidden;
@@ -1017,9 +1026,11 @@ select option:checked {
 }
 
 /* Enhanced Subject Cards - SOLID WHITE BACKGROUND */
-.subject-card {
+.subjects-section .subject-card,
+.subjects-grid .subject-card,
+.admin-container .subject-card {
     background: #ffffff !important;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e5e7eb !important;
     border-radius: 12px;
     padding: 20px;
     min-height: 140px;
@@ -1033,7 +1044,15 @@ select option:checked {
     justify-content: space-between;
 }
 
-.subject-title {
+.subjects-section .subject-card .subject-title,
+.subjects-grid .subject-card .subject-title,
+.admin-container .subject-card .subject-title,
+.subjects-section .subject-card h4,
+.subjects-grid .subject-card h4,
+.admin-container .subject-card h4,
+.subjects-section .subject-card h3,
+.subjects-grid .subject-card h3,
+.admin-container .subject-card h3 {
     color: #111827 !important;
     font-size: 18px;
     font-weight: 700;
@@ -1043,19 +1062,33 @@ select option:checked {
     white-space: nowrap;
 }
 
-.subject-description,
-.subject-info,
-.subject-card p {
+.subjects-section .subject-card .subject-description,
+.subjects-grid .subject-card .subject-description,
+.admin-container .subject-card .subject-description,
+.subjects-section .subject-card .subject-info,
+.subjects-grid .subject-card .subject-info,
+.admin-container .subject-card .subject-info,
+.subjects-section .subject-card p,
+.subjects-grid .subject-card p,
+.admin-container .subject-card p,
+.subjects-section .subject-card span,
+.subjects-grid .subject-card span,
+.admin-container .subject-card span,
+.subjects-section .subject-card strong,
+.subjects-grid .subject-card strong,
+.admin-container .subject-card strong {
     color: #6b7280 !important;
     font-size: 14px;
     line-height: 1.5;
     margin-bottom: 12px;
 }
 
-.subject-card:hover {
+.subjects-section .subject-card:hover,
+.subjects-grid .subject-card:hover,
+.admin-container .subject-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    border-color: #3b82f6;
+    border-color: #3b82f6 !important;
 }
 
 /* Subject Card Header */
