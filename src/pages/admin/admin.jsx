@@ -2437,7 +2437,7 @@ const Admin = () => {
                   <div key={subject.id} className="subject-card enhanced-card">
                     <div className="subject-header">
                       <div className="subject-title-section">
-                        <h4>{subject.name}</h4>
+                        <h4 className="subject-title">{subject.name}</h4>
                         <span
                           className={`status-badge status-${subject.status}`}
                         >

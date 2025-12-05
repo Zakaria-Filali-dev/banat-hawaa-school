@@ -41,6 +41,12 @@ export default function Students() {
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
   const [suspensionInfo, setSuspensionInfo] = useState(null);
   const [notifications, setNotifications] = useState([]); // For showing success/error messages
+
+  // Data caching
+  const [lastFetchTime, setLastFetchTime] = useState(null);
+  const [dataInitialized, setDataInitialized] = useState(false);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   const submissionFormRef = useRef(null);
   const navigate = useNavigate();
 
@@ -92,7 +98,17 @@ export default function Students() {
 
   useEffect(() => {
     (async () => {
+      // Check cache
+      const now = Date.now();
+      const isCacheFresh =
+        lastFetchTime && now - lastFetchTime < CACHE_DURATION;
+
+      if (dataInitialized && isCacheFresh) {
+        return;
+      }
+
       try {
+        setLoading(true);
         const { data: userData, error: userErr } =
           await supabase.auth.getUser();
         if (userErr || !userData?.user) {
@@ -113,6 +129,9 @@ export default function Students() {
 
         setUser(userData.user);
         await fetchStudentData(userData.user.id);
+
+        setLastFetchTime(Date.now());
+        setDataInitialized(true);
       } catch (e) {
         console.error("[Student] auth/profile error:", e);
         setError("Failed to load dashboard");
@@ -121,7 +140,7 @@ export default function Students() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dataInitialized, lastFetchTime]);
 
   const markMessagesAsRead = useCallback(async () => {
     try {

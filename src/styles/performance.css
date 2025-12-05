@@ -59,10 +59,11 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Prevent horizontal overflow */
+/* Prevent body scroll, let #root handle it */
 body {
-    overflow-x: hidden;
+    overflow: hidden;
     width: 100%;
+    height: 100%;
 }
 
 /* Optimize backdrop filters for performance */

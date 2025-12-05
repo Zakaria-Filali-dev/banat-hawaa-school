@@ -142,9 +142,12 @@ const AppContent = () => {
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
-    const checkUser = async () => {
-      setLoading(true);
-      setAuthError(null);
+    let mounted = true;
+
+    const checkUser = async (isInitial = false) => {
+      if (isInitial && mounted) setLoading(true);
+      if (isInitial) setAuthError(null);
+
       try {
         const {
           data: { session },
@@ -154,25 +157,32 @@ const AppContent = () => {
 
         if (session?.user) {
           const role = await authUtils.getUserRole(session.user.id);
-          setUserRole(role);
+          if (mounted) setUserRole(role);
         } else {
-          setUserRole(null);
+          if (mounted) setUserRole(null);
         }
       } catch (err) {
         console.error("Authentication error:", err);
-        setAuthError(err.message);
+        if (mounted) setAuthError(err.message);
       } finally {
-        setLoading(false);
+        if (isInitial && mounted) setLoading(false);
       }
     };
 
-    checkUser();
+    checkUser(true);
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
-      checkUser();
-    });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        // Don't show loading spinner for auth state changes after initial load
+        // This prevents dashboard reload on tab switch/focus
+        if (mounted) {
+          checkUser(false);
+        }
+      }
+    );
 
     return () => {
+      mounted = false;
       if (authListener && authListener.subscription) {
         authListener.subscription.unsubscribe();
       }
