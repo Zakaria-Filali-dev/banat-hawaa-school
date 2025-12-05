@@ -69,7 +69,8 @@ body {
     color: var(--gray-800);
     background: var(--primary-gradient);
     background-attachment: fixed;
-    min-height: 100vh;
+    height: 100%;
+    overflow: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }

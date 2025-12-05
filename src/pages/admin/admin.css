@@ -1001,21 +1001,17 @@ select option:checked {
 /* Responsive subjects grid - default row layout */
 .subjects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 20px;
     margin-top: 1.5rem;
 }
 
-@media (min-width: 768px) {
+@media (max-width: 768px) {
     .subjects-grid {
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        gap: 2rem;
-    }
-}
-
-@media (min-width: 1200px) {
-    .subjects-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 12px;
     }
 }
 
@@ -1024,13 +1020,20 @@ select option:checked {
     background: linear-gradient(135deg, var(--glass-bg), rgba(255, 255, 255, 0.05));
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    padding: 2rem;
+    padding: 16px;
+    min-height: 120px;
     transition: all 0.3s ease;
     position: relative;
     z-index: 1;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.subject-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .subject-card::before {

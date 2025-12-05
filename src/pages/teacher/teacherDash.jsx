@@ -49,6 +49,12 @@ export default function Teachers() {
   });
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
   const [suspensionInfo, setSuspensionInfo] = useState(null);
+
+  // Data caching
+  const [lastFetchTime, setLastFetchTime] = useState(null);
+  const [dataInitialized, setDataInitialized] = useState(false);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -261,6 +267,15 @@ export default function Teachers() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Check cache
+      const now = Date.now();
+      const isCacheFresh =
+        lastFetchTime && now - lastFetchTime < CACHE_DURATION;
+
+      if (dataInitialized && isCacheFresh) {
+        return;
+      }
+
       setLoading(true);
       setError("");
       try {
@@ -284,6 +299,9 @@ export default function Teachers() {
 
         setUser(userData.user);
         await fetchTeacherData(userData.user.id);
+
+        setLastFetchTime(Date.now());
+        setDataInitialized(true);
       } catch {
         setError("Unexpected error. Please try again.");
       } finally {
@@ -291,7 +309,7 @@ export default function Teachers() {
       }
     };
     checkAuth();
-  }, [navigate, fetchTeacherData]);
+  }, [navigate, fetchTeacherData, dataInitialized, lastFetchTime]);
 
   // Handle URL tab parameter from notifications
   useEffect(() => {
