@@ -38,6 +38,11 @@ const Admin = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Data caching to prevent unnecessary reloads
+  const [lastFetchTime, setLastFetchTime] = useState(null);
+  const [dataInitialized, setDataInitialized] = useState(false);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
   // Form states
   const [newTeacher, setNewTeacher] = useState({
     email: "",
@@ -416,6 +421,17 @@ const Admin = () => {
 
   useEffect(() => {
     const checkAuthAndFetch = async () => {
+      // Check if data is still fresh (within cache duration)
+      const now = Date.now();
+      const isCacheFresh =
+        lastFetchTime && now - lastFetchTime < CACHE_DURATION;
+
+      // If we have initialized data and cache is fresh, skip re-fetch
+      if (dataInitialized && isCacheFresh) {
+        console.log("Using cached data, skipping re-fetch");
+        return;
+      }
+
       setLoading(true);
       try {
         const { data: userData, error: userError } =
@@ -438,6 +454,8 @@ const Admin = () => {
 
         setUser(userData.user);
         await fetchAllData();
+        setLastFetchTime(Date.now());
+        setDataInitialized(true);
       } catch (error) {
         console.error("Error checking auth:", error);
         navigate("/login");
@@ -447,7 +465,7 @@ const Admin = () => {
     };
 
     checkAuthAndFetch();
-  }, [navigate, fetchAllData]);
+  }, [navigate, fetchAllData, dataInitialized, lastFetchTime, CACHE_DURATION]);
 
   // Handle URL tab parameter from notifications
   useEffect(() => {

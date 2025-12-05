@@ -4,9 +4,9 @@ html, body {
   padding: 0;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-  width: 100vw;
-  overflow-x: hidden;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
   box-sizing: border-box;
   /* Hardware acceleration for Chrome performance */
   transform: translateZ(0);
@@ -46,11 +46,13 @@ textarea:focus {
   width: 100%;
   max-width: 1400px;
   margin: 0 auto;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
   box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
   /* Ensure proper centering on desktop without transform hacks */
   /* Center using margin auto to avoid conflicts with global transforms */
   background: transparent;
