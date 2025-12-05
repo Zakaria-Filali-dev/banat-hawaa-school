@@ -51,22 +51,27 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
-/* Fix for desktop layout centering - ONLY #root scrolls */
+/* Fix for desktop layout - ONLY #root scrolls */
 #root {
-  height: 100%;
-  width: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-width: 1400px;
-  margin: 0 auto;
+  height: 100% !important;
+  width: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  /* REMOVED max-width - this was causing double scrollbar */
+  margin: 0 !important;
+  padding: 0 !important;
   display: flex;
   flex-direction: column;
-  position: relative;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
   box-sizing: border-box;
   background: transparent;
 }
 
-/* Ensure all main containers respect the centering - NO overflow properties */
+/* Ensure all main containers don't cause overflow */
 .app-container,
 .admin-dashboard,
 .teacher-dashboard,
@@ -74,13 +79,15 @@ textarea:focus {
 .main-container,
 .landing-container,
 .page-wrapper {
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  box-sizing: border-box;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
   transform: translateZ(0);
   min-height: 100%;
-  /* NO overflow properties here */
+  overflow: visible !important;
+  /* NO scrolling on containers */
 }
 
 /* Performance optimizations for all interactive elements */
@@ -94,9 +101,8 @@ button, input, select, textarea {
 /* Responsive adjustments */
 @media (max-width: 1400px) {
   #root {
-    max-width: 100%;
-    padding: 0 20px;
-    /* No positional transforms needed */
+    /* REMOVED padding that could cause overflow */
+    padding: 0 !important;
   }
 }
 

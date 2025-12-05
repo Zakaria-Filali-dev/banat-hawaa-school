@@ -524,8 +524,7 @@ textarea {
     min-height: 100vh;
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%);
     padding: 1rem;
-    max-width: 1400px;
-    margin: 0 auto;
+    /* REMOVED max-width and margin: 0 auto to prevent double scrollbar */
     width: 100%;
     box-sizing: border-box;
     position: relative;
