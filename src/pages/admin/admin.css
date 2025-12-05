@@ -703,7 +703,7 @@ textarea {
     -webkit-transform: translateZ(0);
     will-change: auto;
     position: relative;
-    overflow: hidden;
+    /* REMOVED overflow:hidden - this was causing double scrollbar with #root */
 }
 
 @media (min-width: 768px) {
@@ -999,7 +999,12 @@ select option:checked {
     transform: translateY(-2px);
 }
 
-/* Enhanced Cards Lists with Improved Grid */
+/* ========================================
+   MODERN CARD UI DESIGN - SUBJECT CARDS
+   Following industry best practices from card UI design principles
+   ======================================== */
+
+/* Card Grid Layout - Responsive and Clean */
 .teachers-grid, .subjects-grid, .students-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -1007,45 +1012,96 @@ select option:checked {
     margin-top: 2rem;
 }
 
-/* Responsive subjects grid - default row layout */
+/* Subjects Grid - Optimized for card display */
 .subjects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
     width: 100%;
-    padding: 24px;
+    padding: 0;
     margin-top: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+    .subjects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
 }
 
 @media (max-width: 768px) {
     .subjects-grid {
         grid-template-columns: 1fr;
         gap: 16px;
-        padding: 12px;
+        padding: 0;
     }
 }
 
-/* Enhanced Subject Cards - SOLID WHITE BACKGROUND */
+/* ========================================
+   SUBJECT CARD - Modern Card UI Design
+   
+   Key Principles Applied:
+   - Clean white background with subtle shadows for depth
+   - Clear visual hierarchy (title → description → metadata → actions)
+   - Proper spacing and padding for scannability
+   - Interactive hover effects with smooth transitions
+   - Accessible colors with proper contrast
+   - Focus on one topic per card (the subject)
+   ======================================== */
+
 .admin-container .subjects-section .subject-card,
 .admin-container .subjects-grid .subject-card,
 .admin-content .subjects-section .subject-card,
 .admin-content .subjects-grid .subject-card,
 div[class*="subject"] .subject-card {
+    /* Clean white background - no glass effect on cards themselves */
     background: #ffffff !important;
+
+    /* Subtle border for definition */
     border: 1px solid #e5e7eb !important;
-    border-radius: 12px;
-    padding: 20px;
-    min-height: 140px;
-    transition: all 0.3s ease;
+
+    /* Rounded corners for modern feel */
+    border-radius: 16px;
+
+    /* Generous padding for breathing room */
+    padding: 24px;
+
+    /* Minimum height for consistency */
+    min-height: 160px;
+
+    /* Smooth transitions for interactions */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Positioning */
     position: relative;
     z-index: 1;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+
+    /* Light shadow for depth (card UI principle) */
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.1),
+        0 1px 2px rgba(0, 0, 0, 0.06) !important;
+
+    /* Entire card is clickable (card UI best practice) */
     cursor: pointer;
+
+    /* Flexbox for proper content organization */
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    gap: 16px;
+
+    /* Remove any backdrop filters from cards */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    /* Performance optimization */
+    will-change: transform, box-shadow;
 }
 
+/* ========================================
+   CARD TYPOGRAPHY - Clear Hierarchy
+   ======================================== */
+
+/* Card Title - Primary focus */
 .admin-container .subject-card *[class*="title"],
 .admin-container .subject-card h4,
 .admin-container .subject-card h3,
@@ -1058,16 +1114,24 @@ div[class*="subject"] .subject-card {
 .subjects-grid .subject-card *[class*="title"],
 .subjects-grid .subject-card h4,
 .subjects-grid .subject-card h3 {
-    color: #0f172a !important;
-    font-size: 18px !important;
+    color: #111827 !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
-    margin-bottom: 8px;
+    margin: 0 0 12px 0 !important;
+    line-height: 1.3 !important;
+    letter-spacing: -0.01em;
+    text-shadow: none !important;
+
+    /* Handle long titles gracefully */
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-    text-shadow: none !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
 }
 
+/* Card Body Text - Secondary information */
 .admin-container .subject-card p,
 .admin-container .subject-card span,
 .admin-container .subject-card strong,
@@ -1086,88 +1150,191 @@ div[class*="subject"] .subject-card {
 .subjects-grid .subject-card div,
 .subject-card .subject-description,
 .subject-card .subject-info {
-    color: #475569 !important;
-    font-size: 14px;
-    line-height: 1.5;
-    margin-bottom: 12px;
+    color: #64748b !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    margin: 0 0 12px 0 !important;
     text-shadow: none !important;
 }
+
+/* Strong text in cards */
+.subject-card strong {
+    color: #334155 !important;
+    font-weight: 600 !important;
+}
+
+/* ========================================
+   CARD HOVER STATE - Interactive Feedback
+   ======================================== */
 
 .subjects-section .subject-card:hover,
 .subjects-grid .subject-card:hover,
 .admin-container .subject-card:hover {
+    /* Lift effect (card UI best practice) */
     transform: translateY(-4px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    border-color: #3b82f6 !important;
+
+    /* Enhanced shadow on hover for depth */
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.1),
+        0 6px 12px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(59, 130, 246, 0.1) !important;
+
+    /* Subtle border color change */
+    border-color: rgba(59, 130, 246, 0.3) !important;
 }
 
-/* Subject Card Header */
+/* ========================================
+   CARD INTERNAL STRUCTURE
+   ======================================== */
+
+/* Subject Card Header - Title and Status */
 .subject-card .subject-header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    margin-bottom: 12px;
-}
-
-/* Subject Metadata (teacher count, student count) */
-.subject-card .subject-meta {
-    display: flex;
     gap: 16px;
-    flex-wrap: wrap;
-    margin-top: auto;
+    margin-bottom: 0;
 }
 
-.subject-card .meta-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: #4b5563 !important;
-    font-size: 13px;
+.subject-card .subject-title-section {
+    flex: 1;
+    min-width: 0;
 }
 
-/* Subject Actions (edit, delete buttons) */
-.subject-card .subject-actions {
+/* Subject Content Area */
+.subject-card .subject-content {
+    flex: 1;
     display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Subject Description */
+.subject-card .subject-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Subject Teachers Section */
+.subject-card .subject-teachers {
+    display: flex;
+    flex-direction: column;
     gap: 8px;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #e5e7eb;
 }
 
-.subject-card .action-btn {
-    padding: 6px 12px;
+.subject-card .teacher-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.subject-card .teacher-badge {
+    background: #f1f5f9;
+    color: #475569 !important;
+    padding: 4px 12px;
     border-radius: 6px;
     font-size: 13px;
     font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: none;
 }
 
-.subject-card .edit-btn {
+.subject-card .teacher-badge.primary {
     background: #eff6ff;
     color: #2563eb !important;
 }
 
-.subject-card .edit-btn:hover {
-    background: #dbeafe;
+.subject-card .no-teacher {
+    color: #94a3b8 !important;
+    font-style: italic;
+    font-size: 13px;
 }
 
-.subject-card .delete-btn {
-    background: #fef2f2;
-    color: #dc2626 !important;
+/* Subject Stats - Metadata display */
+.subject-card .subject-stats {
+    display: flex;
+    gap: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+    margin-top: auto;
 }
 
-.subject-card .delete-btn:hover {
+.subject-card .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.subject-card .stat-label {
+    color: #94a3b8 !important;
+    font-weight: 500;
+}
+
+.subject-card .stat-value {
+    color: #1e293b !important;
+    font-weight: 700;
+}
+
+/* Status Badge */
+.subject-card .status-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.subject-card .status-badge.status-active {
+    background: #dcfce7;
+    color: #15803d !important;
+}
+
+.subject-card .status-badge.status-inactive {
     background: #fee2e2;
+    color: #b91c1c !important;
 }
 
-/* Ensure all subject card text is dark and readable */
-.subject-card h4,
-.subject-card h3,
-.subject-card .subject-title,
-.subject-card strong {
-    color: #111827 !important;
+/* Subject Actions - CTA Buttons */
+.subject-card .subject-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.subject-card .subject-actions button {
+    flex: 1;
+    min-width: fit-content;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    white-space: nowrap;
+}
+
+.subject-card .subject-actions .btn-primary {
+    background: #3b82f6 !important;
+    color: white !important;
+}
+
+.subject-card .subject-actions .btn-primary:hover {
+    background: #2563eb !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.subject-card .subject-actions .btn-secondary {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+}
+
+.subject-card .subject-actions .btn-secondary:hover {
+    background: #e2e8f0 !important;
 }
 
 .teacher-card, .student-card {
