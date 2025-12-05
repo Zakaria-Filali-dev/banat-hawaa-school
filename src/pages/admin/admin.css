@@ -1026,9 +1026,11 @@ select option:checked {
 }
 
 /* Enhanced Subject Cards - SOLID WHITE BACKGROUND */
-.subjects-section .subject-card,
-.subjects-grid .subject-card,
-.admin-container .subject-card {
+.admin-container .subjects-section .subject-card,
+.admin-container .subjects-grid .subject-card,
+.admin-content .subjects-section .subject-card,
+.admin-content .subjects-grid .subject-card,
+div[class*="subject"] .subject-card {
     background: #ffffff !important;
     border: 1px solid #e5e7eb !important;
     border-radius: 12px;
@@ -1037,50 +1039,58 @@ select option:checked {
     transition: all 0.3s ease;
     position: relative;
     z-index: 1;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
 }
 
-.subjects-section .subject-card .subject-title,
-.subjects-grid .subject-card .subject-title,
-.admin-container .subject-card .subject-title,
-.subjects-section .subject-card h4,
-.subjects-grid .subject-card h4,
+.admin-container .subject-card *[class*="title"],
 .admin-container .subject-card h4,
+.admin-container .subject-card h3,
+.admin-content .subject-card *[class*="title"],
+.admin-content .subject-card h4,
+.admin-content .subject-card h3,
+.subjects-section .subject-card *[class*="title"],
+.subjects-section .subject-card h4,
 .subjects-section .subject-card h3,
-.subjects-grid .subject-card h3,
-.admin-container .subject-card h3 {
-    color: #111827 !important;
-    font-size: 18px;
-    font-weight: 700;
+.subjects-grid .subject-card *[class*="title"],
+.subjects-grid .subject-card h4,
+.subjects-grid .subject-card h3 {
+    color: #0f172a !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
     margin-bottom: 8px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-shadow: none !important;
 }
 
-.subjects-section .subject-card .subject-description,
-.subjects-grid .subject-card .subject-description,
-.admin-container .subject-card .subject-description,
-.subjects-section .subject-card .subject-info,
-.subjects-grid .subject-card .subject-info,
-.admin-container .subject-card .subject-info,
-.subjects-section .subject-card p,
-.subjects-grid .subject-card p,
 .admin-container .subject-card p,
-.subjects-section .subject-card span,
-.subjects-grid .subject-card span,
 .admin-container .subject-card span,
+.admin-container .subject-card strong,
+.admin-container .subject-card div,
+.admin-content .subject-card p,
+.admin-content .subject-card span,
+.admin-content .subject-card strong,
+.admin-content .subject-card div,
+.subjects-section .subject-card p,
+.subjects-section .subject-card span,
 .subjects-section .subject-card strong,
+.subjects-section .subject-card div,
+.subjects-grid .subject-card p,
+.subjects-grid .subject-card span,
 .subjects-grid .subject-card strong,
-.admin-container .subject-card strong {
-    color: #6b7280 !important;
+.subjects-grid .subject-card div,
+.subject-card .subject-description,
+.subject-card .subject-info {
+    color: #475569 !important;
     font-size: 14px;
     line-height: 1.5;
     margin-bottom: 12px;
+    text-shadow: none !important;
 }
 
 .subjects-section .subject-card:hover,

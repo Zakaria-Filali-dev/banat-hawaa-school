@@ -1,5 +1,14 @@
 /* Global Reset and Performance Optimizations */
-html, body {
+html {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+body {
   height: 100%;
   width: 100%;
   margin: 0;
@@ -7,6 +16,7 @@ html, body {
   overflow: hidden;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-attachment: fixed;
   box-sizing: border-box;
   /* Hardware acceleration for Chrome performance */
   transform: translateZ(0);
