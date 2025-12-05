@@ -92,16 +92,20 @@ body {
 
 /* Container and Layout */
 .container {
-    max-width: 1400px;
-    margin: 0 auto;
+    /* REMOVED max-width to prevent double scrollbar */
+    width: 100%;
+    margin: 0;
     padding: 0 var(--space-lg);
+    box-sizing: border-box;
 }
 
 .page-wrapper {
-    min-height: 100vh;
+    /* REMOVED min-height: 100vh to prevent overflow */
     display: flex;
     flex-direction: column;
     position: relative;
+    width: 100%;
+    overflow: visible;
 }
 
 /* Modern Glass Header */

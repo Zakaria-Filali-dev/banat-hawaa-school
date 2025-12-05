@@ -1048,32 +1048,47 @@ select option:checked {
    - Focus on one topic per card (the subject)
    ======================================== */
 
+/* ULTRA SPECIFIC - Every possible selector combination */
 .admin-container .subjects-section .subject-card,
 .admin-container .subjects-grid .subject-card,
+.admin-container .improved-grid .subject-card,
+.admin-container .improved-grid .enhanced-card,
 .admin-content .subjects-section .subject-card,
 .admin-content .subjects-grid .subject-card,
-div[class*="subject"] .subject-card {
-    /* Clean white background - no glass effect on cards themselves */
+.admin-content .improved-grid .subject-card,
+.admin-content .improved-grid .enhanced-card,
+.subjects-section .subject-card,
+.subjects-grid .subject-card,
+.subjects-grid .enhanced-card,
+.improved-grid .subject-card,
+.improved-grid .enhanced-card,
+div[class*="subject"] .subject-card,
+div.subjects-grid div.subject-card,
+div.improved-grid div.subject-card,
+div.improved-grid div.enhanced-card,
+.subject-card.enhanced-card {
+    /* Clean white background - ULTRA ENFORCED */
     background: #ffffff !important;
+    background-color: #ffffff !important;
 
     /* Subtle border for definition */
     border: 1px solid #e5e7eb !important;
 
     /* Rounded corners for modern feel */
-    border-radius: 16px;
+    border-radius: 16px !important;
 
     /* Generous padding for breathing room */
-    padding: 24px;
+    padding: 24px !important;
 
     /* Minimum height for consistency */
-    min-height: 160px;
+    min-height: 160px !important;
 
     /* Smooth transitions for interactions */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 
     /* Positioning */
-    position: relative;
-    z-index: 1;
+    position: relative !important;
+    z-index: 1 !important;
 
     /* Light shadow for depth (card UI principle) */
     box-shadow:
@@ -1081,19 +1096,19 @@ div[class*="subject"] .subject-card {
         0 1px 2px rgba(0, 0, 0, 0.06) !important;
 
     /* Entire card is clickable (card UI best practice) */
-    cursor: pointer;
+    cursor: pointer !important;
 
     /* Flexbox for proper content organization */
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
 
     /* Remove any backdrop filters from cards */
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
 
     /* Performance optimization */
-    will-change: transform, box-shadow;
+    will-change: transform, box-shadow !important;
 }
 
 /* ========================================
