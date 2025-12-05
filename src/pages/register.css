@@ -250,9 +250,11 @@
     margin-bottom: 25px;
 }
 
-.form-label {
-    color: #1f2937;
+.form-label,
+label {
+    color: #1f2937 !important;
     font-weight: 600;
+    font-size: 14px;
     margin-bottom: 8px;
     display: block;
 }
@@ -264,32 +266,43 @@
 }
 
 .form-input,
-.form-textarea {
+.form-textarea,
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+input[type="password"],
+select,
+textarea {
     width: 100%;
-    padding: 16px 20px;
-    background-color: rgba(255, 255, 255, 0.95);
+    padding: 12px 16px;
+    background-color: rgba(255, 255, 255, 0.95) !important;
     border: 1px solid #d1d5db;
-    border-radius: 12px;
-    color: #111827;
-    font-size: 16px;
-    /* Prevents iOS zoom */
+    border-radius: 8px;
+    color: #111827 !important;
+    font-size: 14px;
     font-family: inherit;
     transition: all 0.3s ease;
     box-sizing: border-box;
 }
 
 .form-input::placeholder,
-.form-textarea::placeholder {
-    color: #6b7280;
+.form-textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: #6b7280 !important;
     opacity: 1;
 }
 
 .form-input:focus,
-.form-textarea:focus {
+.form-textarea:focus,
+input:focus,
+select:focus,
+textarea:focus {
     outline: none;
-    border-color: #667eea;
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    border-color: #3b82f6;
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .form-input.error,
@@ -335,29 +348,29 @@
 .subject-card {
     display: flex;
     align-items: center;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    border-radius: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     min-height: 80px;
+    color: #1f2937;
 }
 
 .subject-card:hover {
-    background: rgba(255, 255, 255, 1);
-    border-color: #667eea;
+    border-color: #3b82f6;
+    background: #ffffff !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .subject-card.selected {
-    background: rgba(102, 126, 234, 0.1);
-    border-color: #667eea;
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    border-color: #3b82f6;
+    background: #eff6ff !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .subject-checkbox {

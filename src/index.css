@@ -1,12 +1,12 @@
 /* Global Reset and Performance Optimizations */
 html, body {
-  margin: 0;
-  padding: 0;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   height: 100%;
   width: 100%;
+  margin: 0;
+  padding: 0;
   overflow: hidden;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   box-sizing: border-box;
   /* Hardware acceleration for Chrome performance */
   transform: translateZ(0);
@@ -41,33 +41,36 @@ textarea:focus {
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
 }
 
-/* Fix for desktop layout centering */
+/* Fix for desktop layout centering - ONLY #root scrolls */
 #root {
+  height: 100%;
   width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   max-width: 1400px;
   margin: 0 auto;
-  height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
   box-sizing: border-box;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* Ensure proper centering on desktop without transform hacks */
-  /* Center using margin auto to avoid conflicts with global transforms */
   background: transparent;
 }
 
-/* Ensure all main containers respect the centering */
+/* Ensure all main containers respect the centering - NO overflow properties */
 .app-container,
 .admin-dashboard,
 .teacher-dashboard,
-.student-dashboard {
+.student-dashboard,
+.main-container,
+.landing-container,
+.page-wrapper {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
   transform: translateZ(0);
+  min-height: 100%;
+  /* NO overflow properties here */
 }
 
 /* Performance optimizations for all interactive elements */
