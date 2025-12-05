@@ -1101,26 +1101,62 @@ div[class*="subject"] .subject-card {
    CARD TYPOGRAPHY - Clear Hierarchy
    ======================================== */
 
-/* Card Title - Primary focus */
+/* Card Title - Primary focus - ULTRA AGGRESSIVE SELECTORS */
+.admin-container .subjects-section .subject-card *[class*="title"],
+.admin-container .subjects-section .subject-card h4,
+.admin-container .subjects-section .subject-card h3,
+.admin-container .subjects-section .subject-card .subject-title,
+.admin-container .subjects-section .subject-card .subject-header h4,
+.admin-container .subjects-grid .subject-card *[class*="title"],
+.admin-container .subjects-grid .subject-card h4,
+.admin-container .subjects-grid .subject-card h3,
+.admin-container .subjects-grid .subject-card .subject-title,
+.admin-container .subjects-grid .subject-card .subject-header h4,
 .admin-container .subject-card *[class*="title"],
 .admin-container .subject-card h4,
 .admin-container .subject-card h3,
+.admin-container .subject-card .subject-title,
+.admin-container .subject-card .subject-header h4,
+.admin-content .subjects-section .subject-card *[class*="title"],
+.admin-content .subjects-section .subject-card h4,
+.admin-content .subjects-section .subject-card h3,
+.admin-content .subjects-section .subject-card .subject-title,
+.admin-content .subjects-grid .subject-card *[class*="title"],
+.admin-content .subjects-grid .subject-card h4,
+.admin-content .subjects-grid .subject-card h3,
+.admin-content .subjects-grid .subject-card .subject-title,
 .admin-content .subject-card *[class*="title"],
 .admin-content .subject-card h4,
 .admin-content .subject-card h3,
+.admin-content .subject-card .subject-title,
 .subjects-section .subject-card *[class*="title"],
 .subjects-section .subject-card h4,
 .subjects-section .subject-card h3,
+.subjects-section .subject-card .subject-title,
 .subjects-grid .subject-card *[class*="title"],
 .subjects-grid .subject-card h4,
-.subjects-grid .subject-card h3 {
+.subjects-grid .subject-card h3,
+.subjects-grid .subject-card .subject-title,
+.subject-card *[class*="title"],
+.subject-card h4,
+.subject-card h3,
+.subject-card .subject-title,
+.subject-card .subject-header h4,
+.subject-card .subject-header .subject-title,
+.subject-card .subject-title-section h4,
+.subject-card .subject-title-section .subject-title,
+.enhanced-card .subject-title,
+.enhanced-card h4,
+.enhanced-card h3 {
     color: #111827 !important;
     font-size: 20px !important;
     font-weight: 700 !important;
     margin: 0 0 12px 0 !important;
     line-height: 1.3 !important;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.01em !important;
     text-shadow: none !important;
+    background: transparent !important;
+    -webkit-text-fill-color: #111827 !important;
 
     /* Handle long titles gracefully */
     overflow: hidden;
@@ -1131,36 +1167,63 @@ div[class*="subject"] .subject-card {
     white-space: normal;
 }
 
-/* Card Body Text - Secondary information */
+/* Card Body Text - Secondary information - ULTRA AGGRESSIVE */
+.admin-container .subjects-section .subject-card p,
+.admin-container .subjects-section .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-container .subjects-section .subject-card strong,
+.admin-container .subjects-section .subject-card div:not(.subject-header):not(.subject-actions),
+.admin-container .subjects-grid .subject-card p,
+.admin-container .subjects-grid .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-container .subjects-grid .subject-card strong,
+.admin-container .subjects-grid .subject-card div:not(.subject-header):not(.subject-actions),
 .admin-container .subject-card p,
-.admin-container .subject-card span,
+.admin-container .subject-card span:not(.status-badge):not(.teacher-badge),
 .admin-container .subject-card strong,
-.admin-container .subject-card div,
+.admin-container .subject-card div:not(.subject-header):not(.subject-actions),
+.admin-content .subjects-section .subject-card p,
+.admin-content .subjects-section .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-content .subjects-section .subject-card strong,
+.admin-content .subjects-grid .subject-card p,
+.admin-content .subjects-grid .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-content .subjects-grid .subject-card strong,
 .admin-content .subject-card p,
-.admin-content .subject-card span,
+.admin-content .subject-card span:not(.status-badge):not(.teacher-badge),
 .admin-content .subject-card strong,
-.admin-content .subject-card div,
 .subjects-section .subject-card p,
-.subjects-section .subject-card span,
+.subjects-section .subject-card span:not(.status-badge):not(.teacher-badge),
 .subjects-section .subject-card strong,
-.subjects-section .subject-card div,
 .subjects-grid .subject-card p,
-.subjects-grid .subject-card span,
+.subjects-grid .subject-card span:not(.status-badge):not(.teacher-badge),
 .subjects-grid .subject-card strong,
-.subjects-grid .subject-card div,
+.subject-card p,
+.subject-card span:not(.status-badge):not(.teacher-badge),
+.subject-card strong,
 .subject-card .subject-description,
-.subject-card .subject-info {
+.subject-card .subject-info,
+.subject-card .subject-content p,
+.subject-card .subject-content span:not(.status-badge):not(.teacher-badge),
+.subject-card .subject-content strong,
+.subject-card .subject-teachers,
+.subject-card .stat-label,
+.enhanced-card p,
+.enhanced-card span:not(.status-badge):not(.teacher-badge),
+.enhanced-card strong {
     color: #64748b !important;
     font-size: 14px !important;
     line-height: 1.6 !important;
     margin: 0 0 12px 0 !important;
     text-shadow: none !important;
+    background: transparent !important;
+    -webkit-text-fill-color: #64748b !important;
 }
 
-/* Strong text in cards */
-.subject-card strong {
+/* Strong text in cards - darker */
+.subject-card strong,
+.subject-card .stat-label,
+.enhanced-card strong {
     color: #334155 !important;
     font-weight: 600 !important;
+    -webkit-text-fill-color: #334155 !important;
 }
 
 /* ========================================

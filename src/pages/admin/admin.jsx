@@ -2434,10 +2434,23 @@ const Admin = () => {
               <h3>Current Subjects</h3>
               <div className="subjects-grid improved-grid">
                 {subjects.map((subject) => (
-                  <div key={subject.id} className="subject-card enhanced-card">
+                  <div
+                    key={subject.id}
+                    className="subject-card enhanced-card"
+                    style={{ background: "#ffffff" }}
+                  >
                     <div className="subject-header">
                       <div className="subject-title-section">
-                        <h4 className="subject-title">{subject.name}</h4>
+                        <h4
+                          className="subject-title"
+                          style={{
+                            color: "#111827",
+                            fontSize: "20px",
+                            fontWeight: "700",
+                          }}
+                        >
+                          {subject.name}
+                        </h4>
                         <span
                           className={`status-badge status-${subject.status}`}
                         >
@@ -2463,19 +2476,25 @@ const Admin = () => {
                     </div>
 
                     <div className="subject-content">
-                      <p className="subject-description">
+                      <p
+                        className="subject-description"
+                        style={{ color: "#64748b" }}
+                      >
                         {subject.description}
                       </p>
 
                       <div className="subject-teachers">
-                        <strong>Teachers:</strong>
+                        <strong style={{ color: "#334155" }}>Teachers:</strong>
                         <div className="teacher-list">
                           {subject.teacher?.full_name ? (
                             <span className="teacher-badge primary">
                               {subject.teacher.full_name}
                             </span>
                           ) : (
-                            <span className="no-teacher">
+                            <span
+                              className="no-teacher"
+                              style={{ color: "#94a3b8" }}
+                            >
                               No teacher assigned
                             </span>
                           )}
@@ -2484,14 +2503,30 @@ const Admin = () => {
 
                       <div className="subject-stats">
                         <div className="stat-item">
-                          <span className="stat-label">Students:</span>
-                          <span className="stat-value">
+                          <span
+                            className="stat-label"
+                            style={{ color: "#94a3b8" }}
+                          >
+                            Students:
+                          </span>
+                          <span
+                            className="stat-value"
+                            style={{ color: "#1e293b", fontWeight: "700" }}
+                          >
                             {subjectStats[subject.id]?.studentCount || 0}
                           </span>
                         </div>
                         <div className="stat-item">
-                          <span className="stat-label">Assignments:</span>
-                          <span className="stat-value">
+                          <span
+                            className="stat-label"
+                            style={{ color: "#94a3b8" }}
+                          >
+                            Assignments:
+                          </span>
+                          <span
+                            className="stat-value"
+                            style={{ color: "#1e293b", fontWeight: "700" }}
+                          >
                             {subjectStats[subject.id]?.assignmentCount || 0}
                           </span>
                         </div>
