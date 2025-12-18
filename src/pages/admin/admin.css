@@ -14,6 +14,15 @@
     --glass-border: var(--glass-border-admin);
 }
 
+/* CRITICAL: Override text colors for subject cards specifically */
+.admin-container .subjects-section .subject-card,
+.admin-container .subjects-section .subject-card *,
+.admin-container .subjects-grid .subject-card,
+.admin-container .subjects-grid .subject-card * {
+    --text-primary: #111827 !important;
+    --text-secondary: #6b7280 !important;
+}
+
 /* Performance and Stability Fixes */
 * {
     backface-visibility: hidden;
@@ -515,8 +524,7 @@ textarea {
     min-height: 100vh;
     background: linear-gradient(135deg, var(--primary-light) 0%, var(--secondary-light) 100%);
     padding: 1rem;
-    max-width: 1400px;
-    margin: 0 auto;
+    /* REMOVED max-width and margin: 0 auto to prevent double scrollbar */
     width: 100%;
     box-sizing: border-box;
     position: relative;
@@ -694,7 +702,7 @@ textarea {
     -webkit-transform: translateZ(0);
     will-change: auto;
     position: relative;
-    overflow: hidden;
+    /* REMOVED overflow:hidden - this was causing double scrollbar with #root */
 }
 
 @media (min-width: 768px) {
@@ -990,7 +998,12 @@ select option:checked {
     transform: translateY(-2px);
 }
 
-/* Enhanced Cards Lists with Improved Grid */
+/* ========================================
+   MODERN CARD UI DESIGN - SUBJECT CARDS
+   Following industry best practices from card UI design principles
+   ======================================== */
+
+/* Card Grid Layout - Responsive and Clean */
 .teachers-grid, .subjects-grid, .students-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -998,59 +1011,407 @@ select option:checked {
     margin-top: 2rem;
 }
 
-/* Responsive subjects grid - default row layout */
+/* Subjects Grid - Optimized for card display */
 .subjects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    padding: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    width: 100%;
+    padding: 0;
     margin-top: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+    .subjects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
 }
 
 @media (max-width: 768px) {
     .subjects-grid {
         grid-template-columns: 1fr;
         gap: 16px;
-        padding: 12px;
+        padding: 0;
     }
 }
 
-/* Enhanced Subject Cards */
-.subject-card {
-    background: linear-gradient(135deg, var(--glass-bg), rgba(255, 255, 255, 0.05));
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    padding: 16px;
-    min-height: 120px;
-    transition: all 0.3s ease;
-    position: relative;
-    z-index: 1;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+/* ========================================
+   SUBJECT CARD - Modern Card UI Design
+   
+   Key Principles Applied:
+   - Clean white background with subtle shadows for depth
+   - Clear visual hierarchy (title → description → metadata → actions)
+   - Proper spacing and padding for scannability
+   - Interactive hover effects with smooth transitions
+   - Accessible colors with proper contrast
+   - Focus on one topic per card (the subject)
+   ======================================== */
+
+/* ULTRA SPECIFIC - Every possible selector combination */
+.admin-container .subjects-section .subject-card,
+.admin-container .subjects-grid .subject-card,
+.admin-container .improved-grid .subject-card,
+.admin-container .improved-grid .enhanced-card,
+.admin-content .subjects-section .subject-card,
+.admin-content .subjects-grid .subject-card,
+.admin-content .improved-grid .subject-card,
+.admin-content .improved-grid .enhanced-card,
+.subjects-section .subject-card,
+.subjects-grid .subject-card,
+.subjects-grid .enhanced-card,
+.improved-grid .subject-card,
+.improved-grid .enhanced-card,
+div[class*="subject"] .subject-card,
+div.subjects-grid div.subject-card,
+div.improved-grid div.subject-card,
+div.improved-grid div.enhanced-card,
+.subject-card.enhanced-card {
+    /* Clean white background - ULTRA ENFORCED */
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+
+    /* Subtle border for definition */
+    border: 1px solid #e5e7eb !important;
+
+    /* Rounded corners for modern feel */
+    border-radius: 16px !important;
+
+    /* Generous padding for breathing room */
+    padding: 24px !important;
+
+    /* Minimum height for consistency */
+    min-height: 160px !important;
+
+    /* Smooth transitions for interactions */
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+    /* Positioning */
+    position: relative !important;
+    z-index: 1 !important;
+
+    /* Light shadow for depth (card UI principle) */
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.1),
+        0 1px 2px rgba(0, 0, 0, 0.06) !important;
+
+    /* Entire card is clickable (card UI best practice) */
+    cursor: pointer !important;
+
+    /* Flexbox for proper content organization */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+
+    /* Remove any backdrop filters from cards */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+
+    /* Performance optimization */
+    will-change: transform, box-shadow !important;
 }
 
-.subject-title {
+/* ========================================
+   CARD TYPOGRAPHY - Clear Hierarchy
+   ======================================== */
+
+/* Card Title - Primary focus - ULTRA AGGRESSIVE SELECTORS */
+.admin-container .subjects-section .subject-card *[class*="title"],
+.admin-container .subjects-section .subject-card h4,
+.admin-container .subjects-section .subject-card h3,
+.admin-container .subjects-section .subject-card .subject-title,
+.admin-container .subjects-section .subject-card .subject-header h4,
+.admin-container .subjects-grid .subject-card *[class*="title"],
+.admin-container .subjects-grid .subject-card h4,
+.admin-container .subjects-grid .subject-card h3,
+.admin-container .subjects-grid .subject-card .subject-title,
+.admin-container .subjects-grid .subject-card .subject-header h4,
+.admin-container .subject-card *[class*="title"],
+.admin-container .subject-card h4,
+.admin-container .subject-card h3,
+.admin-container .subject-card .subject-title,
+.admin-container .subject-card .subject-header h4,
+.admin-content .subjects-section .subject-card *[class*="title"],
+.admin-content .subjects-section .subject-card h4,
+.admin-content .subjects-section .subject-card h3,
+.admin-content .subjects-section .subject-card .subject-title,
+.admin-content .subjects-grid .subject-card *[class*="title"],
+.admin-content .subjects-grid .subject-card h4,
+.admin-content .subjects-grid .subject-card h3,
+.admin-content .subjects-grid .subject-card .subject-title,
+.admin-content .subject-card *[class*="title"],
+.admin-content .subject-card h4,
+.admin-content .subject-card h3,
+.admin-content .subject-card .subject-title,
+.subjects-section .subject-card *[class*="title"],
+.subjects-section .subject-card h4,
+.subjects-section .subject-card h3,
+.subjects-section .subject-card .subject-title,
+.subjects-grid .subject-card *[class*="title"],
+.subjects-grid .subject-card h4,
+.subjects-grid .subject-card h3,
+.subjects-grid .subject-card .subject-title,
+.subject-card *[class*="title"],
+.subject-card h4,
+.subject-card h3,
+.subject-card .subject-title,
+.subject-card .subject-header h4,
+.subject-card .subject-header .subject-title,
+.subject-card .subject-title-section h4,
+.subject-card .subject-title-section .subject-title,
+.enhanced-card .subject-title,
+.enhanced-card h4,
+.enhanced-card h3 {
+    color: #111827 !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    margin: 0 0 12px 0 !important;
+    line-height: 1.3 !important;
+    letter-spacing: -0.01em !important;
+    text-shadow: none !important;
+    background: transparent !important;
+    -webkit-text-fill-color: #111827 !important;
+
+    /* Handle long titles gracefully */
     overflow: hidden;
     text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+}
+
+/* Card Body Text - Secondary information - ULTRA AGGRESSIVE */
+.admin-container .subjects-section .subject-card p,
+.admin-container .subjects-section .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-container .subjects-section .subject-card strong,
+.admin-container .subjects-section .subject-card div:not(.subject-header):not(.subject-actions),
+.admin-container .subjects-grid .subject-card p,
+.admin-container .subjects-grid .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-container .subjects-grid .subject-card strong,
+.admin-container .subjects-grid .subject-card div:not(.subject-header):not(.subject-actions),
+.admin-container .subject-card p,
+.admin-container .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-container .subject-card strong,
+.admin-container .subject-card div:not(.subject-header):not(.subject-actions),
+.admin-content .subjects-section .subject-card p,
+.admin-content .subjects-section .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-content .subjects-section .subject-card strong,
+.admin-content .subjects-grid .subject-card p,
+.admin-content .subjects-grid .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-content .subjects-grid .subject-card strong,
+.admin-content .subject-card p,
+.admin-content .subject-card span:not(.status-badge):not(.teacher-badge),
+.admin-content .subject-card strong,
+.subjects-section .subject-card p,
+.subjects-section .subject-card span:not(.status-badge):not(.teacher-badge),
+.subjects-section .subject-card strong,
+.subjects-grid .subject-card p,
+.subjects-grid .subject-card span:not(.status-badge):not(.teacher-badge),
+.subjects-grid .subject-card strong,
+.subject-card p,
+.subject-card span:not(.status-badge):not(.teacher-badge),
+.subject-card strong,
+.subject-card .subject-description,
+.subject-card .subject-info,
+.subject-card .subject-content p,
+.subject-card .subject-content span:not(.status-badge):not(.teacher-badge),
+.subject-card .subject-content strong,
+.subject-card .subject-teachers,
+.subject-card .stat-label,
+.enhanced-card p,
+.enhanced-card span:not(.status-badge):not(.teacher-badge),
+.enhanced-card strong {
+    color: #64748b !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    margin: 0 0 12px 0 !important;
+    text-shadow: none !important;
+    background: transparent !important;
+    -webkit-text-fill-color: #64748b !important;
+}
+
+/* Strong text in cards - darker */
+.subject-card strong,
+.subject-card .stat-label,
+.enhanced-card strong {
+    color: #334155 !important;
+    font-weight: 600 !important;
+    -webkit-text-fill-color: #334155 !important;
+}
+
+/* ========================================
+   CARD HOVER STATE - Interactive Feedback
+   ======================================== */
+
+.subjects-section .subject-card:hover,
+.subjects-grid .subject-card:hover,
+.admin-container .subject-card:hover {
+    /* Lift effect (card UI best practice) */
+    transform: translateY(-4px);
+
+    /* Enhanced shadow on hover for depth */
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.1),
+        0 6px 12px rgba(0, 0, 0, 0.08),
+        0 0 0 1px rgba(59, 130, 246, 0.1) !important;
+
+    /* Subtle border color change */
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* ========================================
+   CARD INTERNAL STRUCTURE
+   ======================================== */
+
+/* Subject Card Header - Title and Status */
+.subject-card .subject-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 0;
+}
+
+.subject-card .subject-title-section {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Subject Content Area */
+.subject-card .subject-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Subject Description */
+.subject-card .subject-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Subject Teachers Section */
+.subject-card .subject-teachers {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.subject-card .teacher-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.subject-card .teacher-badge {
+    background: #f1f5f9;
+    color: #475569 !important;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.subject-card .teacher-badge.primary {
+    background: #eff6ff;
+    color: #2563eb !important;
+}
+
+.subject-card .no-teacher {
+    color: #94a3b8 !important;
+    font-style: italic;
+    font-size: 13px;
+}
+
+/* Subject Stats - Metadata display */
+.subject-card .subject-stats {
+    display: flex;
+    gap: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+    margin-top: auto;
+}
+
+.subject-card .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.subject-card .stat-label {
+    color: #94a3b8 !important;
+    font-weight: 500;
+}
+
+.subject-card .stat-value {
+    color: #1e293b !important;
+    font-weight: 700;
+}
+
+/* Status Badge */
+.subject-card .status-badge {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.subject-card .status-badge.status-active {
+    background: #dcfce7;
+    color: #15803d !important;
+}
+
+.subject-card .status-badge.status-inactive {
+    background: #fee2e2;
+    color: #b91c1c !important;
+}
+
+/* Subject Actions - CTA Buttons */
+.subject-card .subject-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.subject-card .subject-actions button {
+    flex: 1;
+    min-width: fit-content;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
     white-space: nowrap;
 }
 
-.subject-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
-    border-radius: 20px 20px 0 0;
+.subject-card .subject-actions .btn-primary {
+    background: #3b82f6 !important;
+    color: white !important;
 }
 
-.subject-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
+.subject-card .subject-actions .btn-primary:hover {
+    background: #2563eb !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.subject-card .subject-actions .btn-secondary {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+}
+
+.subject-card .subject-actions .btn-secondary:hover {
+    background: #e2e8f0 !important;
 }
 
 .teacher-card, .student-card {

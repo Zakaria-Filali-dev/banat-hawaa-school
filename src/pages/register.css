@@ -162,42 +162,59 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: rgba(255, 255, 255, 0.6);
-    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.7);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .progress-step.active {
     color: white;
+    transform: scale(1.05);
 }
 
 .step-number {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
+    /* Changed from white to vibrant gradient */
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.5), rgba(168, 85, 247, 0.5));
+    border: 2px solid rgba(255, 255, 255, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
+    font-weight: 700;
+    font-size: 18px;
     margin-bottom: 8px;
-    transition: all 0.3s ease;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .progress-step.active .step-number {
-    background: rgba(255, 255, 255, 0.9);
-    color: #667eea;
-    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+    /* Active state: bright gradient with glow */
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    border-color: rgba(255, 255, 255, 0.8);
+    color: white;
+    box-shadow:
+        0 0 0 4px rgba(168, 85, 247, 0.2),
+        0 8px 20px rgba(99, 102, 241, 0.4),
+        0 4px 12px rgba(168, 85, 247, 0.3);
+    transform: scale(1.1);
 }
 
 .step-label {
-    font-size: 0.85rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .progress-line {
     width: 60px;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.3);
+    height: 3px;
+    /* Changed from white to gradient */
+    background: linear-gradient(90deg,
+            rgba(99, 102, 241, 0.4),
+            rgba(168, 85, 247, 0.4));
+    border-radius: 2px;
     margin: 0 20px;
 }
 
@@ -250,11 +267,17 @@
     margin-bottom: 25px;
 }
 
-.form-label {
-    color: #1f2937;
-    font-weight: 600;
+.form-label,
+label,
+.register-card label,
+.form-group label,
+.register-page label {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
     margin-bottom: 8px;
     display: block;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
 }
 
 .form-row {
@@ -263,33 +286,54 @@
     gap: 20px;
 }
 
-.form-input,
-.form-textarea {
+.register-card .form-input,
+.register-card .form-textarea,
+.register-card input[type="text"],
+.register-card input[type="email"],
+.register-card input[type="tel"],
+.register-card input[type="date"],
+.register-card input[type="password"],
+.register-card select,
+.register-card textarea,
+.register-page input,
+.register-page select,
+.register-page textarea {
     width: 100%;
-    padding: 16px 20px;
-    background-color: rgba(255, 255, 255, 0.95);
-    border: 1px solid #d1d5db;
+    padding: 14px 18px;
+    /* Light cream/beige background - not pure white */
+    background-color: rgba(255, 250, 240, 0.95) !important;
+    background: rgba(255, 250, 240, 0.95) !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
     border-radius: 12px;
-    color: #111827;
-    font-size: 16px;
-    /* Prevents iOS zoom */
+    /* Dark text for contrast */
+    color: #1f2937 !important;
+    -webkit-text-fill-color: #1f2937 !important;
+    font-size: 15px;
+    font-weight: 500;
     font-family: inherit;
     transition: all 0.3s ease;
     box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-.form-input::placeholder,
-.form-textarea::placeholder {
-    color: #6b7280;
-    opacity: 1;
+.register-card input::placeholder,
+.register-card textarea::placeholder,
+.register-card select::placeholder {
+    color: #6b7280 !important;
+    opacity: 0.8;
+    font-weight: 400;
 }
 
-.form-input:focus,
-.form-textarea:focus {
+.register-card .form-input:focus,
+.register-card .form-textarea:focus,
+.register-card input:focus,
+.register-card select:focus,
+.register-card textarea:focus {
     outline: none;
-    border-color: #667eea;
-    background: rgba(255, 255, 255, 1);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+    border-color: rgba(255, 255, 255, 0.8);
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
 }
 
 .form-input.error,
@@ -335,29 +379,29 @@
 .subject-card {
     display: flex;
     align-items: center;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    border-radius: 16px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     min-height: 80px;
+    color: #1f2937;
 }
 
 .subject-card:hover {
-    background: rgba(255, 255, 255, 1);
-    border-color: #667eea;
+    border-color: #3b82f6;
+    background: #ffffff !important;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .subject-card.selected {
-    background: rgba(102, 126, 234, 0.1);
-    border-color: #667eea;
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    border-color: #3b82f6;
+    background: #eff6ff !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .subject-checkbox {
